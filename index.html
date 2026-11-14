@@ -1,0 +1,1434 @@
+<!doctype html>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Split-Flap Build Guide</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo+Narrow:wght@500;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: bench manual. Sticky size bar, then numbered build stages; each step is a checkbox row with its parts and fasteners. */
+:root {
+  --bg: #eef0ee; --panel: #ffffff; --fg: #1d2124; --muted: #5d666c; --line: #d3d8d6;
+  --accent: #d9a400; --accent-fg: #1d2124; --warn-bg: #fff4d6; --warn-line: #e3c25a; --done: #8a9296; --stage: #dfe3e1;
+  --display: "Archivo Narrow", "Arial Narrow", system-ui, sans-serif;
+  --body: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #15181a; --panel: #1d2124; --fg: #e6e9e7; --muted: #9aa3a8; --line: #2f3539;
+  --accent: #f2bf1d; --accent-fg: #15181a; --warn-bg: #2d2714; --warn-line: #7a6420; --done: #6c7479; --stage: #23282b; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #15181a; --panel: #1d2124; --fg: #e6e9e7; --muted: #9aa3a8; --line: #2f3539;
+  --accent: #f2bf1d; --accent-fg: #15181a; --warn-bg: #2d2714; --warn-line: #7a6420; --done: #6c7479; --stage: #23282b; color-scheme: dark }
+body { margin: 0; background: var(--bg); color: var(--fg); font-family: var(--body); font-size: 15.5px; line-height: 1.55; }
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--panel); }
+.bar { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; background: var(--panel); border-bottom: 1px solid var(--line); }
+.bar-in, .wrap { max-width: 860px; margin: 0 auto;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+.bar-in { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 16px; padding-block: 10px; }
+.bar b { font-family: var(--display); font-size: 18px; letter-spacing: .02em; }
+.sizes { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--muted); }
+.sizes button { font: 700 16px var(--display); min-width: 40px; padding: 4px 10px; border-radius: 5px; cursor: pointer;
+  border: 1px solid var(--line); background: var(--bg); color: var(--fg); }
+.sizes button[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--accent-fg); }
+.prog { font: 500 13px var(--mono); color: var(--muted); font-variant-numeric: tabular-nums; }
+.wrap { display: grid; gap: 28px; padding-block: 24px 48px; }
+h1 { font-family: var(--display); font-weight: 700; font-size: 34px; line-height: 1.1; margin: 0 0 8px; text-wrap: balance; }
+.lede { margin: 0; color: var(--muted); max-width: 62ch; }
+.lede a, p a, li a, td a { color: var(--fg); text-decoration-color: var(--accent); text-decoration-thickness: 2px; text-underline-offset: 3px; }
+nav ol { margin: 12px 0 0; padding: 0; list-style: none; display: flex; flex-wrap: wrap; gap: 6px; }
+nav a { display: inline-block; font: 500 13px var(--mono); padding: 4px 8px; border: 1px solid var(--line); border-radius: 5px; color: var(--fg); text-decoration: none; background: var(--panel); }
+section { display: grid; gap: 12px; scroll-margin-top: 70px; }
+.stage-h { display: flex; align-items: baseline; gap: 12px; border-bottom: 2px solid var(--fg); padding-bottom: 6px; }
+.stage-h span { font: 500 13px var(--mono); color: var(--muted); }
+h2 { font-family: var(--display); font-size: 26px; margin: 0; text-wrap: balance; }
+h3 { font-family: var(--display); font-size: 18px; margin: 8px 0 0; letter-spacing: .02em; text-transform: uppercase; }
+p { margin: 0; max-width: 68ch; }
+.steps { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; counter-reset: s; }
+.steps li { counter-increment: s; display: grid; grid-template-columns: 28px 1fr; gap: 6px 10px; align-items: start;
+  background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 10px 12px; }
+.steps input { width: 20px; height: 20px; margin: 2px 0 0; accent-color: var(--accent); cursor: pointer; }
+.steps label { cursor: pointer; min-width: 0; }
+.steps label::before { content: counter(s) ". "; font: 500 13px var(--mono); color: var(--muted); }
+.steps li.done label { color: var(--done); }
+.steps li.done label::before { color: var(--done); }
+.steps .note { grid-column: 2; font-size: 14px; color: var(--muted); }
+.kit { grid-column: 2; display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.kit span { font: 500 12px var(--mono); padding: 2px 7px; border-radius: 4px; border: 1px solid var(--line); background: var(--bg); white-space: nowrap; }
+.go3d { font: 500 12px var(--mono); padding: 2px 8px; border-radius: 4px; border: 1px solid var(--accent); background: transparent; color: var(--fg); cursor: pointer; }
+.go3d::before { content: "▶ "; color: var(--accent); }
+.warn { background: var(--warn-bg); border: 1px solid var(--warn-line); border-radius: 6px; padding: 10px 12px; max-width: 72ch; }
+.warn b { font-family: var(--display); letter-spacing: .03em; text-transform: uppercase; font-size: 14px; margin-right: 6px; }
+.info { background: var(--panel); border: 1px solid var(--line); border-left: 4px solid var(--accent); border-radius: 6px; padding: 10px 14px; display: grid; gap: 8px; }
+.info h3 { margin: 0; }
+.info ul { margin: 0; padding-left: 20px; display: grid; gap: 4px; }
+.tbl { overflow-x: auto; background: var(--panel); border: 1px solid var(--line); border-radius: 6px; }
+table { border-collapse: collapse; width: 100%; font-size: 14px; }
+th, td { text-align: left; padding: 7px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+tr:last-child td { border-bottom: 0; }
+th { font-weight: 600; color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: .05em; background: var(--bg); }
+td.n { font-family: var(--mono); font-variant-numeric: tabular-nums; text-align: right; white-space: nowrap; }
+code { font-family: var(--mono); font-size: 13px; overflow-wrap: anywhere; }
+pre { margin: 0; background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 10px 12px; overflow-x: auto; font: 13px/1.5 var(--mono); }
+.two { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+@media (max-width: 680px) { .two { grid-template-columns: 1fr; } h1 { font-size: 28px; } }
+.photo { margin: 0; background: var(--panel); border: 1px solid var(--line); border-radius: 6px; overflow: hidden; }
+.photo img { display: block; width: 100%; height: auto; }
+.photo figcaption { font-size: 13px; color: var(--muted); padding: 6px 10px; }
+.steps .photo { grid-column: 2; max-width: 440px; }
+.gallery { display: grid; grid-template-columns: repeat(auto-fill, minmax(118px, 1fr)); gap: 8px; }
+.gallery img { aspect-ratio: 1; object-fit: contain; background: #fff; padding: 6px; box-sizing: border-box; }
+.gallery figcaption { font: 12px var(--mono); padding: 4px 6px; }
+.pcb { margin: 0; background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 10px; display: grid; gap: 8px; align-content: start; min-width: 0; }
+.pcb svg { display: block; width: 100%; max-width: 340px; height: auto; margin: 0 auto; }
+.pcb figcaption { font-size: 13px; color: var(--muted); }
+.pcb .board { fill: var(--stage); stroke: var(--muted); stroke-width: .3; }
+.pcb .hole { fill: var(--panel); stroke: var(--muted); stroke-width: .2; }
+.pcb .part { fill: var(--panel); stroke: var(--fg); stroke-width: .3; }
+.pcb .empty { fill: none; stroke: var(--muted); stroke-width: .2; stroke-dasharray: .8 .6; }
+.pcb .pad { fill: var(--accent); }
+.pcb .tab { stroke: var(--accent); stroke-width: .9; }
+.pcb text { font-family: var(--mono); font-size: 2.2px; fill: var(--fg); text-anchor: middle; dominant-baseline: central; }
+.pcb text.dim { fill: var(--muted); font-size: 1.9px; }
+.pcb .badge { fill: var(--accent); }
+.pcb text.num { fill: var(--accent-fg); font-weight: 500; font-size: 2.2px; }
+.reset { justify-self: start; font: 500 13px var(--mono); padding: 6px 10px; border-radius: 5px; border: 1px solid var(--line); background: var(--panel); color: var(--muted); cursor: pointer; }
+button:focus-visible, input:focus-visible, a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.anim { margin: 0; background: var(--panel); border: 1px solid var(--line); border-radius: 8px; overflow: hidden; scroll-margin-top: 64px; }
+/* 16:9 on wide screens, never under 240px tall. A set height, because aspect-ratio with min-height would widen the box past a phone screen. */
+.anim-stage { position: relative; height: min(466px, max(240px, 56.25vw)); background: var(--stage); }
+.anim-stage canvas { display: block; width: 100%; height: 100%; touch-action: none; }
+.anim-status[hidden] { display: none; }
+.anim-status { position: absolute; inset: 0; display: grid; place-items: center; padding: 16px; text-align: center; color: var(--muted); font: 13px var(--mono); pointer-events: none; }
+.anim-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; padding: 8px 10px; border-top: 1px solid var(--line); }
+.anim-bar button { font: 500 13px var(--mono); min-width: 36px; padding: 5px 9px; border-radius: 5px; border: 1px solid var(--line); background: var(--bg); color: var(--fg); cursor: pointer; }
+.anim-bar button.play { background: var(--accent); border-color: var(--accent); color: var(--accent-fg); }
+.anim-dots { list-style: none; margin: 0 0 0 auto; padding: 0; display: flex; flex-wrap: wrap; gap: 4px; }
+.anim-dots button { min-width: 0; padding: 4px 8px; }
+.anim-dots button[aria-current="step"] { border-color: var(--accent); box-shadow: inset 0 -2px 0 var(--accent); }
+.anim figcaption { display: grid; gap: 6px; padding: 10px 12px 12px; border-top: 1px solid var(--line); }
+.anim figcaption b { font-family: var(--display); font-size: 18px; letter-spacing: .02em; }
+.anim figcaption .kit { grid-column: auto; }
+.hint { color: var(--muted); font-size: 13px; margin-top: -4px; }
+.swatch { display: inline-block; width: 10px; height: 10px; border-radius: 2px; vertical-align: baseline; margin: 0 3px 0 1px; }
+/* Progress: stage counts in the nav, a jump to the next open step, and one chip per unit for repeated stages. */
+.steps li, .steps input { scroll-margin-top: 110px; }
+.anim-stage { cursor: pointer; }
+.anim-stage canvas { cursor: grab; }
+/* On a phone the top bar wraps to three rows. */
+@media (max-width: 680px) { section, .anim { scroll-margin-top: 116px; } .steps li, .steps input { scroll-margin-top: 130px; } }
+.bar-r { display: flex; align-items: center; gap: 10px; }
+.cont { font: 500 13px var(--mono); padding: 5px 10px; border-radius: 5px; border: 1px solid var(--accent); background: transparent; color: var(--fg); cursor: pointer; }
+.cont[hidden] { display: none; }
+nav a .ct { color: var(--muted); margin-left: 6px; font-variant-numeric: tabular-nums; }
+nav a.complete { border-color: var(--accent); }
+nav a.complete .ct { color: var(--fg); }
+.tally { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 8px 12px; font-size: 14px; }
+.tally b { font-weight: 600; flex-basis: 100%; }
+.tally button { font: 500 14px var(--mono); min-width: 36px; min-height: 36px; border-radius: 5px; border: 1px solid var(--line); background: var(--bg); color: var(--fg); cursor: pointer; }
+.tally button[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--accent-fg); }
+.tally .ct { margin-left: auto; font: 500 13px var(--mono); color: var(--muted); font-variant-numeric: tabular-nums; }
+/* Wiring drawings. Each net has its own colour, and every pin is labelled, so colour is never the only cue. */
+:root { --w12: #c62828; --w5: #b86a00; --w3: #2e7d32; --wsda: #1565c0; --wscl: #7b1fa2; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --w12: #ff7b72; --w5: #f2a33a; --w3: #6cc070; --wsda: #6cb6ff; --wscl: #d2a8ff; } }
+:root[data-theme="dark"] { --w12: #ff7b72; --w5: #f2a33a; --w3: #6cc070; --wsda: #6cb6ff; --wscl: #d2a8ff; }
+.wire { margin: 0; background: var(--panel); border: 1px solid var(--line); border-radius: 6px; overflow: hidden; }
+.wire-scroll { overflow-x: auto; }
+.wire svg { display: block; width: 100%; min-width: 640px; height: auto; }
+.wire figcaption { font-size: 13px; color: var(--muted); padding: 6px 10px; border-top: 1px solid var(--line); }
+.steps .wire { grid-column: 2; min-width: 0; }
+.wire .box { fill: var(--bg); stroke: var(--fg); stroke-width: .4; }
+.wire text { font-family: var(--mono); font-size: 2.7px; fill: var(--fg); dominant-baseline: central; }
+.wire text.t { font-family: var(--display); font-weight: 700; font-size: 3.3px; letter-spacing: .04em; text-anchor: middle; }
+.wire text.s { fill: var(--muted); font-size: 2.4px; text-anchor: middle; }
+.wire text.big { font-size: 5.5px; }
+.wire text.p { font-size: 3.3px; }
+.wire text.net { font-size: 2.6px; text-anchor: middle; paint-order: stroke; stroke: var(--panel); stroke-width: 1.4px; }
+.wire path { fill: none; stroke-width: .8; stroke-linejoin: round; stroke-linecap: round; }
+.wire .n12 { stroke: var(--w12); } .wire .n5 { stroke: var(--w5); } .wire .n3 { stroke: var(--w3); }
+.wire .ngnd { stroke: var(--fg); } .wire .nsda { stroke: var(--wsda); } .wire .nscl { stroke: var(--wscl); }
+.wire .nbus { stroke: var(--fg); stroke-width: 1.4; }
+.wire circle.n12 { fill: var(--w12); stroke: none; } .wire circle.n5 { fill: var(--w5); stroke: none; } .wire circle.ngnd { fill: var(--fg); stroke: none; }
+details > summary { cursor: pointer; font-size: 14px; color: var(--muted); }
+details[open] > summary { margin-bottom: 8px; }
+/* Photos open full size. */
+.photo img { cursor: zoom-in; }
+dialog.zoom { border: 0; padding: 0; background: transparent; max-width: 96vw; max-height: 96vh; }
+dialog.zoom::backdrop { background: rgba(0, 0, 0, .82); }
+dialog.zoom img { display: block; max-width: 96vw; max-height: 92vh; background: #fff; cursor: zoom-out; border-radius: 4px; }
+@media print {
+  html:root:not([data-theme="x"]) { --bg: #fff; --panel: #fff; --fg: #000; --muted: #444; --line: #bbb; --stage: #eee; --warn-bg: #fff; --done: #000; color-scheme: light; }
+  .bar, nav, .anim, .hint, .go3d, .reset, .cont, .tally, dialog { display: none !important; }
+  body { font-size: 11pt; }
+  .wrap { max-width: none; padding: 0; gap: 16px; }
+  .steps li, .warn, .info, figure, tr { break-inside: avoid; }
+  .stage-h { break-after: avoid; }
+  .wire svg { min-width: 0; }
+  .steps .photo { max-width: 300px; }
+  details > summary { display: none; }
+}
+</style>
+
+<div class="bar"><div class="bar-in">
+  <b>Split-flap build</b>
+  <div class="sizes" role="group" aria-label="Number of units">Units
+    <button id="u7" data-n="7" aria-pressed="false">7</button>
+    <button id="u8" data-n="8" aria-pressed="false">8</button>
+    <button id="u9" data-n="9" aria-pressed="true">9</button>
+    <button id="u10" data-n="10" aria-pressed="false">10</button>
+  </div>
+  <span class="bar-r"><span class="prog" id="prog">0 / 0 steps</span><button class="cont" id="cont" type="button" hidden>Next step ↓</button></span>
+</div></div>
+
+<main class="wrap">
+  <header>
+    <h1>Split-flap build guide</h1>
+    <p class="lede">From printed parts and bare PCBs to a working display. It follows David Königsmann's original instructions (Printables 69464) and his photos, changed for this build: shortened case, hand-soldered boards, and an ESP32 in place of the ESP-01. Hole positions and screw paths come from the CAD model. Pick your size at the top and every quantity updates. Ticks are saved in this browser, and <b>Next step</b> in the top bar jumps to the first step you haven't ticked. Steps with a <span class="go3d" style="cursor:default">3D</span> button show that step in the stage's 3D diagram. Click any photo to enlarge it.</p>
+    <nav aria-label="Stages"><ol>
+      <li><a href="#parts">Parts</a></li><li><a href="#pcb">1 PCBs</a></li><li><a href="#drum">2 Drums</a></li>
+      <li><a href="#unit">3 Units</a></li><li><a href="#first">4 First unit test</a></li><li><a href="#case">5 Case</a></li>
+      <li><a href="#esp">6 ESP32</a></li><li><a href="#all">7 All units</a></li><li><a href="#trouble">Troubleshooting</a></li>
+    </ol></nav>
+  </header>
+
+  <section id="parts">
+    <div class="stage-h"><h2>Parts and fasteners</h2><span>for <b class="N">9</b> units</span></div>
+    <div class="two">
+      <div class="tbl"><table>
+        <thead><tr><th>Printed</th><th>Qty</th></tr></thead>
+        <tbody>
+          <tr><td><code>UnitFrame</code></td><td class="n"><span class="N">9</span></td></tr>
+          <tr><td><code>FlapDrumInner</code> + <code>FlapDrumOuter</code></td><td class="n"><span class="N">9</span> each</td></tr>
+          <tr><td>Flaps, 45 per unit</td><td class="n" id="flaps">405</td></tr>
+          <tr><td>Case: Left, Center, Right of MiddleFrame, FrontCover, BackCover</td><td class="n">9 pcs</td></tr>
+          <tr><td colspan="2" id="caseFiles" style="font-size:13px;color:var(--muted)"></td></tr>
+        </tbody>
+      </table></div>
+      <div class="tbl"><table>
+        <thead><tr><th>Electronics</th><th>Qty</th></tr></thead>
+        <tbody>
+          <tr><td>Bare PCB, Arduino Nano, 12 V 28BYJ-48, KY-003, 2×1 mm magnet</td><td class="n"><span class="N">9</span> each</td></tr>
+          <tr><td>ULN2003A (SOP-16), L7805CV, 4-position DIP switch</td><td class="n"><span class="N">9</span> each</td></tr>
+          <tr><td>330 nF and 100 nF capacitors (0805)</td><td class="n"><span class="N">9</span> each</td></tr>
+          <tr><td>1×15 female header</td><td class="n" id="headers">18</td></tr>
+          <tr><td>JST-XH board sockets: 5-pin, 3-pin</td><td class="n"><span class="N">9</span> each</td></tr>
+          <tr><td>JST-XH board socket: 4-pin</td><td class="n" id="xh4">18</td></tr>
+          <tr><td>XH-4 cable, plugs on both ends, 100 mm (bus)</td><td class="n" id="busCables">8</td></tr>
+          <tr><td>XH-3 cable, plug on one end, 300 mm (hall sensor)</td><td class="n"><span class="N">9</span></td></tr>
+          <tr><td>XH-4 cable, plug on one end, 200 mm (power + ESP32)</td><td class="n">1</td></tr>
+          <tr><td>ESP32 DevKit, BSS138 level-shifter module, 12→5 V buck</td><td class="n">1 each</td></tr>
+          <tr><td>12 V ≥3 A supply, 1000 µF 25 V capacitor</td><td class="n">1 each</td></tr>
+          <tr><td>DC jack for a hole under 9 mm (the case hole is 9.2 mm)</td><td class="n">1</td></tr>
+          <tr><td>KCD1-101 rocker switch (the case hole is 18.5×12.5 mm)</td><td class="n">1</td></tr>
+          <tr><td>22 AWG silicone wire, flux, double-sided foam tape</td><td class="n">—</td></tr>
+        </tbody>
+      </table></div>
+    </div>
+    <div class="tbl"><table>
+      <thead><tr><th>Fastener</th><th>Where</th><th>Qty</th></tr></thead>
+      <tbody id="fasteners"></tbody>
+    </table></div>
+    <p style="font-size:14px;color:var(--muted)">Fastener assignments are from the upstream screw table. Per unit: 2 of each unit fastener. The case needs the same count for every size.</p>
+    <h3>Tools</h3>
+    <div class="tbl"><table>
+      <thead><tr><th>Tool</th><th>Used for</th></tr></thead>
+      <tbody>
+        <tr><td>Soldering iron with a fine tip, solder, flux</td><td>The boards and cables. At about 200 °C it also melts in the heat inserts</td></tr>
+        <tr><td>Multimeter with continuity mode</td><td>Board checks, the power lead, each bus cable, setting the buck converter</td></tr>
+        <tr><td>Screwdrivers or hex keys to fit your M2, M3 and M4 screws</td><td>Every fastener in the table above</td></tr>
+        <tr><td>Small screwdriver</td><td>The buck converter's trimmer and the DIP switches</td></tr>
+        <tr><td>Flush cutters, wire strippers, tweezers</td><td>Wires, and placing the surface-mount parts</td></tr>
+        <tr><td>Glue for the magnets, a marker, tape, labels</td><td>Magnets, marking the magnet's face, tagging wires and units</td></tr>
+        <tr><td>USB cables for the Nano and for the ESP32</td><td>Flashing. Check which sockets your boards have</td></tr>
+        <tr><td>PC with PlatformIO (<code>pio</code>)</td><td>Flashing and the serial monitor</td></tr>
+        <tr><td>Soft cloth, sandpaper or a knife</td><td>Protecting the case faces, trimming seams that don't close</td></tr>
+      </tbody>
+    </table></div>
+    <h3>What each printed part looks like</h3>
+    <div class="gallery">
+      <figure class="photo"><img src="img/part-drum-inner.png" alt="FlapDrumInner: a disc with four round holes, spokes and a ring of flap holes" loading="lazy" onerror="this.parentNode.remove()"><figcaption>FlapDrumInner</figcaption></figure>
+      <figure class="photo"><img src="img/part-drum-outer.png" alt="FlapDrumOuter: an open cylinder with a ring of flap holes at one end" loading="lazy" onerror="this.parentNode.remove()"><figcaption>FlapDrumOuter</figcaption></figure>
+      <figure class="photo"><img src="img/part-unit-frame.png" alt="UnitFrame" loading="lazy" onerror="this.parentNode.remove()"><figcaption>UnitFrame</figcaption></figure>
+      <figure class="photo"><img src="img/part-mf-left.png" alt="MiddleFrameLeft: a flat plate with windows" loading="lazy" onerror="this.parentNode.remove()"><figcaption>MiddleFrameLeft</figcaption></figure>
+      <figure class="photo"><img src="img/part-mf-center.png" alt="MiddleFrameCenter: an I-shaped piece with tabs at top and bottom" loading="lazy" onerror="this.parentNode.remove()"><figcaption>MiddleFrameCenter</figcaption></figure>
+      <figure class="photo"><img src="img/part-mf-right.png" alt="MiddleFrameRight" loading="lazy" onerror="this.parentNode.remove()"><figcaption>MiddleFrameRight</figcaption></figure>
+      <figure class="photo"><img src="img/part-fc-left.png" alt="FrontCoverLeft: an open box with display slots" loading="lazy" onerror="this.parentNode.remove()"><figcaption>FrontCoverLeft</figcaption></figure>
+      <figure class="photo"><img src="img/part-fc-center.png" alt="FrontCoverCenter: two tabs joined by a thin strip" loading="lazy" onerror="this.parentNode.remove()"><figcaption>FrontCoverCenter</figcaption></figure>
+      <figure class="photo"><img src="img/part-fc-right.png" alt="FrontCoverRight" loading="lazy" onerror="this.parentNode.remove()"><figcaption>FrontCoverRight</figcaption></figure>
+      <figure class="photo"><img src="img/part-bc-left.png" alt="BackCoverLeft: a shallow tray with a keyhole" loading="lazy" onerror="this.parentNode.remove()"><figcaption>BackCoverLeft</figcaption></figure>
+      <figure class="photo"><img src="img/part-bc-center.png" alt="BackCoverCenter" loading="lazy" onerror="this.parentNode.remove()"><figcaption>BackCoverCenter</figcaption></figure>
+      <figure class="photo"><img src="img/part-bc-right.png" alt="BackCoverRight" loading="lazy" onerror="this.parentNode.remove()"><figcaption>BackCoverRight</figcaption></figure>
+    </div>
+    <p style="font-size:14px;color:var(--muted)">Upstream's renders of the 10-unit parts. Shorter cases have shorter Left and/or Right pieces.</p>
+  </section>
+
+  <section id="pcb">
+    <div class="stage-h"><h2>1 · Solder the PCBs</h2><span>×<b class="N">9</b></span></div>
+    <div class="warn"><b>Do one first</b>Build and test one complete board before soldering the rest. All boards are identical. Every part goes through or onto the side shown below, and the parts drawn dashed stay empty on every board: the ESP-01 socket (U2) and U9, Q1, Q2, R1–R4 and C5.</div>
+    <p>Both views have the board's <b>top edge</b> up: that's the edge nearest U10 and the U4 chip, and U7 and U8 sit on the opposite edge. The numbers on the maps are the soldering order in the table. The board says <b>Version 1.2</b> on the top side; the photos in stage 3 show an older version.</p>
+    <div class="two">
+      <figure class="pcb"><div id="pcbTop"></div><figcaption><b>Top side.</b> Parts sit on this side and are soldered on the other.</figcaption></figure>
+      <figure class="pcb"><div id="pcbBottom"></div><figcaption><b>Bottom side.</b> Turned over left to right, so the left and right are swapped. These three parts sit and are soldered on this side.</figcaption></figure>
+    </div>
+    <div class="two">
+      <figure class="photo"><img src="img/pcb-top.png" alt="Rendered top side of the board with the DIP switch, sockets and L7805 fitted" loading="lazy" onerror="this.parentNode.remove()"><figcaption>Top side, finished, before the Nano goes in.</figcaption></figure>
+      <figure class="photo"><img src="img/pcb-bottom.png" alt="Rendered bottom side of the board with the unused parts crossed out in red" loading="lazy" onerror="this.parentNode.remove()"><figcaption>Bottom side. Skip the parts crossed out in red.</figcaption></figure>
+    </div>
+    <div class="tbl"><table>
+      <thead><tr><th>#</th><th>Part</th><th>Ref</th><th>Side</th><th>Where</th><th>Which way round</th></tr></thead>
+      <tbody>
+        <tr><td>1</td><td>ULN2003A</td><td>U4</td><td>Bottom</td><td>Near the top edge</td><td>Dot and pin 1 at the top left, as in the bottom view</td></tr>
+        <tr><td>2</td><td>100 nF</td><td>C2</td><td>Bottom</td><td>Upper spot in the box marked 5V</td><td>Either way</td></tr>
+        <tr><td>3</td><td>330 nF</td><td>C1</td><td>Bottom</td><td>Lower spot in the box marked 5V</td><td>Either way</td></tr>
+        <tr><td>4</td><td>DIP switch</td><td>SW1</td><td>Top</td><td>Left edge, below U6</td><td>Marked ON edge toward U6, switch 1 on the left</td></tr>
+        <tr><td>5</td><td>1×15 headers × 2</td><td>U1</td><td>Top</td><td>The two long rows, right side</td><td>Either way. The Nano's USB end goes to the top edge</td></tr>
+        <tr><td>6</td><td>XH 5-pin</td><td>U10</td><td>Top</td><td>Top left corner</td><td>The peg under the socket only fits one way</td></tr>
+        <tr><td>7</td><td>XH 3-pin</td><td>U6</td><td>Top</td><td>Left edge, below U10</td><td>No peg: same way round as U10</td></tr>
+        <tr><td>8</td><td>XH 4-pin × 2</td><td>U7, U8</td><td>Top</td><td>Bottom edge</td><td>The peg under each socket only fits one way</td></tr>
+        <tr><td>9</td><td>L7805</td><td>U3</td><td>Top</td><td>Above U8, right side</td><td>Upright, metal tab toward the Nano</td></tr>
+      </tbody>
+    </table></div>
+    <ol class="steps" data-stage="pcb">
+      <li><input type="checkbox" id="pcb1"><label for="pcb1"><b>U4, ULN2003A, bottom side.</b> Place it so the dot on the chip is at the top left, as in the bottom view. Add flux, tack one corner pin, check that every pin sits on its pad, then solder the rest. Clear any bridges between pins.</label></li>
+      <li><input type="checkbox" id="pcb2"><label for="pcb2"><b>C2 100 nF and C1 330 nF, bottom side.</b> They go in the white box marked 5V, C2 above C1. Do not use the C5 spot just above them. These capacitors have no polarity.</label></li>
+      <li><input type="checkbox" id="pcb3"><label for="pcb3"><b>SW1 and the Nano headers, top side.</b> Fit the DIP switch with its ON edge toward U6 and switch 1 on the left. Then fit the <b>two 1×15 female headers</b> into the long rows. Plug the Nano in, USB end toward the top edge, to hold them straight while you solder them from the bottom side. Unplug it afterwards.</label></li>
+      <li><input type="checkbox" id="pcb4"><label for="pcb4"><b>JST-XH sockets, top side.</b> U10 (5-pin), U6 (3-pin), then U7 and U8 (4-pin). U10, U7 and U8 each have a peg that fits only one way. U6 has none, so match it to U10 next to it. Hold each socket flat against the board while you solder it.</label></li>
+      <li><input type="checkbox" id="pcb5"><label for="pcb5"><b>U3, L7805, top side.</b> Stand it upright with the <b>metal tab toward the Nano</b> and the printed black face toward U7 and U8. Left to right, the legs are IN, GND, OUT. Backwards, it puts 12 V on the 5 V rail and destroys the Nano.</label>
+        <div class="note">Don't lay it flat, even though the older boards in the stage 3 photos have it that way: its metal tab would rest on the empty ESP-01 pads.</div></li>
+      <li><input type="checkbox" id="pcb6"><label for="pcb6"><b>Meter check, no power, no Nano.</b> Use continuity mode on the socket pins from the bottom side. GND and 12V on U8 must not beep, and neither must U6's two outer pins. U8's GND pin must beep to U6's middle pin. The pinouts are in the table below.</label></li>
+      <li><input type="checkbox" id="pcb7"><label for="pcb7"><b>Make the power lead.</b> Plug the 200 mm XH-4 cable into U8. The labels beside U8 name its pins, left to right: 12V, GND, SDA, SCL. Tag each wire at the socket, because cable colours mean nothing. Unplug it, solder <b>12V</b> to the DC jack's centre pin and <b>GND</b> to its outer contact, and tape over the SDA and SCL ends separately so they can't touch anything.</label>
+        <div class="note">Check with the meter which jack tab is the centre pin, and that your supply is centre-positive.</div></li>
+      <li><input type="checkbox" id="pcb8"><label for="pcb8"><b>First power, no Nano.</b> Plug the lead into U8 and apply 12 V. The Nano header's <b>5V</b> hole, 4th from the bottom of the left row, should read 4.9–5.1 V against GND. If it doesn't, or the 7805 gets hot, disconnect and recheck it.</label></li>
+    </ol>
+    <div class="tbl" id="pinouts"><table>
+      <thead><tr><th>Socket</th><th>Pins, in order</th></tr></thead>
+      <tbody>
+        <tr><td><b>U7</b> (printed on the board)</td><td>Left to right: SCL, SDA, GND, 12V</td></tr>
+        <tr><td><b>U8</b> (printed on the board)</td><td>Left to right: 12V, GND, SDA, SCL</td></tr>
+        <tr><td><b>U6</b> (not printed)</td><td>From the U10 end down: 5V, GND, signal</td></tr>
+        <tr><td><b>Nano</b></td><td>SDA is A4, SCL is A5</td></tr>
+      </tbody>
+    </table></div>
+    <div class="tally" data-tally="pcb" data-label="Boards soldered and passing the 5 V check (steps 1–6 and 8)"></div>
+  </section>
+
+  <section id="drum">
+    <div class="stage-h"><h2>2 · Drums and flaps</h2><span>×<b class="N">9</b></span></div>
+    <p><code>FlapDrumOuter</code> is the long open cylinder. <code>FlapDrumInner</code> is the disc with spokes, four large holes and the motor hub. Each has a ring of 45 flap holes, and the flaps hang between the two rings.</p>
+    <div class="anim-host" data-seq="drum" data-label="drum assembly"></div>
+    <p class="hint">The two drum halves are the CAD parts. The magnet and flaps are simplified shapes. <span class="swatch" style="background:#e0a800"></span>Yellow marks the parts a step moves, <span class="swatch" style="background:#ff5a1f"></span>orange what it adds.</p>
+    <ol class="steps" data-stage="drum">
+      <li><input type="checkbox" id="dm1"><label for="dm1">Stand <code>FlapDrumOuter</code> on its flange with the plain end up. Inside, two round bosses stand against the wall, about 10 mm below the rim. Melt an <b>M2 insert</b> into the top of each one with the soldering iron at about 200 °C. Push straight down and stop when it is flush.</label>
+        <div class="kit"><span>2× M2 insert</span><button class="go3d" type="button" data-seq="drum" data-anim="1">3D</button></div>
+        <figure class="photo"><img src="img/drum-inserts.jpeg" alt="Soldering iron pressing a brass insert into a boss inside the drum cylinder" loading="lazy" onerror="this.parentNode.remove()"></figure></li>
+      <li><input type="checkbox" id="dm9"><label for="dm9">Solder a 300 mm XH-3 cable to each <b>KY-003</b>, by function and not by position, because the two ends use different pin orders. Plug the cable into a U6 socket to see which wire is which, then connect the wire at U6's <b>5V</b> pin (nearest U10) to the sensor's <b>+</b>, the <b>middle</b> wire to <b>−</b>, and the wire nearest SW1 to <b>S</b>.</label>
+        <div class="note">On most KY-003 boards the middle pin is +, so a straight-through cable would reverse the power. Go by the labels on your board. If only S and − are marked, the unmarked pin is +.</div></li>
+      <li><input type="checkbox" id="dm2"><label for="dm2">Find the magnet's pole. Plug the sensor into U6 of the tested board and apply 12 V to the board. Hold the magnet to the sensor: when its LED lights, that face points at the sensor. Mark that face with a marker. If the LED stays dark on both faces, disconnect and recheck the wiring.</label></li>
+      <li><input type="checkbox" id="dm3"><label for="dm3">On <code>FlapDrumInner</code>, find the small 2 mm pocket on the hub side (the side the hub sticks out of), 20 mm from the centre. Glue the <b>2×1 mm magnet</b> into it, marked face out. Let it cure.</label>
+        <div class="kit"><button class="go3d" type="button" data-seq="drum" data-anim="2">3D</button></div></li>
+      <li><input type="checkbox" id="dm4"><label for="dm4">Push <code>FlapDrumInner</code> into the plain end of <code>FlapDrumOuter</code>, hub first. Its two small counterbored holes must land over the inserts. It's a friction fit: it takes some force, and the halves can still be pulled apart.</label>
+        <div class="kit"><button class="go3d" type="button" data-seq="drum" data-anim="3">3D</button></div></li>
+      <li><input type="checkbox" id="dm5"><label for="dm5">Each flap ring has a tiny round mark next to one hole (arrow in the photo). The screw holes line up in two positions. Use the one where the two marks also line up.</label>
+        <div class="kit"><button class="go3d" type="button" data-seq="drum" data-anim="3">3D</button></div>
+        <figure class="photo"><img src="img/drum-first-flap.jpeg" alt="Drum with an arrow pointing at the small first-flap mark on the ring" loading="lazy" onerror="this.parentNode.remove()"></figure></li>
+      <li><input type="checkbox" id="dm6"><label for="dm6">Lift the outer half a little, slide in a few flaps, press it back, and repeat. Start at the mark with <b>Flap 2</b>, the flap that is blank on one side and has part of an A on the other. Continue 3, 4 … 45, then Flap 1 last. After the first dozen, flip through them by hand: the halves should meet to form A, B, C. If they don't, take them out and reverse the direction around the drum or the way the flaps face.</label>
+        <div class="kit"><button class="go3d" type="button" data-seq="drum" data-anim="4">3D</button></div>
+        <div class="note">Flaps go in by file number, so keep the plates separate. If you printed the five <code>Flaps PT</code> plates, they are the whole set. If you printed upstream's flaps, take 1, 14, 15, 24, 25, 28–31 and 41–45 from <code>Flaps PT</code> instead. The drum then reads: blank A–Z Ã Ç É 0–9 Á . TikTok Instagram Facebook.</div></li>
+      <li><input type="checkbox" id="dm7"><label for="dm7">Lock the halves: two <b>M2×8</b> screws through the counterbored holes in <code>FlapDrumInner</code> into the inserts.</label><div class="kit"><span>2× M2×8</span><button class="go3d" type="button" data-seq="drum" data-anim="5">3D</button></div></li>
+      <li><input type="checkbox" id="dm8"><label for="dm8">Spin the drum by hand. Every flap should drop cleanly and none should snag.</label></li>
+    </ol>
+    <div class="tally" data-tally="drum" data-label="Drums built, with their sensor cable soldered"></div>
+  </section>
+
+  <section id="unit">
+    <div class="stage-h"><h2>3 · Unit assembly</h2><span>×<b class="N">9</b></span></div>
+    <p><code>UnitFrame</code> has a flat base, a side wall for the motor, and an upright <b>PCB plate</b> at one end. The PCB goes on the outside of that plate. Later the plate is screwed to the middle frame and the PCB pokes through a window.</p>
+    <div class="anim-host" data-seq="unit" data-label="unit assembly"></div>
+    <p class="hint">The frame and drum are the CAD parts. The motor, sensor and board are simplified shapes placed on the frame's real mounting holes. The flaps and cables are left out.</p>
+    <ol class="steps" data-stage="unit">
+      <li><input type="checkbox" id="ut1"><label for="ut1">On the drum side of the PCB plate, each of the four corner bosses has a hex pocket. Push <b>M3 nuts</b> into two diagonally opposite pockets: top left and bottom right, for example. If a nut won't seat, put an M3 screw through from the PCB side and tighten it to pull the nut in, then take the screw out.</label><div class="kit"><span>2× M3 nut</span><button class="go3d" type="button" data-seq="unit" data-anim="1">3D</button></div></li>
+      <li><input type="checkbox" id="ut2"><label for="ut2">Set the <b>stepper</b> against its two posts on the side wall, shaft pointing away from the wall, and fix it with two M4×8 screws through its mounting ears. Its wires exit toward the small round post at the far end of the base, as in the photo.</label><div class="kit"><span>2× M4×8</span><button class="go3d" type="button" data-seq="unit" data-anim="2">3D</button></div></li>
+      <li><input type="checkbox" id="ut3"><label for="ut3">Screw the <b>KY-003</b>, with its cable already soldered, to its mount with two M2×4 screws, as in the photo.</label><div class="kit"><span>2× M2×4</span><button class="go3d" type="button" data-seq="unit" data-anim="3">3D</button></div>
+        <figure class="photo"><img src="img/unit-top.jpeg" alt="Unit frame from above with the stepper, hall sensor and PCB mounted" loading="lazy" onerror="this.parentNode.remove()"></figure></li>
+      <li><input type="checkbox" id="ut4"><label for="ut4">Route the stepper and sensor cables through the back of the frame and press them into the cable channel.</label>
+        <figure class="photo"><img src="img/unit-cables.jpeg" alt="Underside of the unit frame with cables pressed into the channel" loading="lazy" onerror="this.parentNode.remove()"></figure></li>
+      <li><input type="checkbox" id="ut5"><label for="ut5">Fix the <b>PCB</b> to the outside of the PCB plate. It fits either way up, so check first: <b>U10 and U6 go toward the hall sensor end</b>, and U7 and U8 toward the small round post. Drive two M3×6 screws through opposite corners into the 3 mm post holes. They cut their own thread, so stop when snug. Plug the motor into U10 ("28BYJ-48 Stepper 12V", 5-pin) and the sensor into U6 ("Magnet Sensor", 3-pin).</label><div class="kit"><span>2× M3×6</span><button class="go3d" type="button" data-seq="unit" data-anim="4">3D</button></div>
+        <figure class="photo"><img src="img/unit-pcb.jpeg" alt="PCB mounted on the unit's plate with the Nano, DIP switch and connectors" loading="lazy" onerror="this.parentNode.remove()"><figcaption>An older board. Yours says Version 1.2, has no 12V terminal, and has the 7805 upright.</figcaption></figure></li>
+      <li><input type="checkbox" id="ut6"><label for="ut6">Fit the <b>drum</b>: its open end goes over the motor and sensor, and the hub in <code>FlapDrumInner</code> presses onto the motor shaft. Line up the flat in the hub with the flat on the shaft. Push it on until it is seated, then turn it by hand: it must not rub the frame, and the magnet must pass close to the sensor.</label>
+        <div class="kit"><button class="go3d" type="button" data-seq="unit" data-anim="5">3D</button></div></li>
+      <li><input type="checkbox" id="ut7"><label for="ut7">Set the <b>DIP switch</b> for this unit's position (table in stage 7) and label the frame. Plug in the <b>Nano</b> with its <b>USB end toward U10</b>. Backwards, it can be destroyed at power-up. All 30 pins must be in the headers.</label></li>
+    </ol>
+    <div class="tally" data-tally="unit" data-label="Units assembled, DIP set and labelled"></div>
+  </section>
+
+  <section id="first">
+    <div class="stage-h"><h2>4 · First unit test</h2><span>one unit, before building the rest</span></div>
+    <p>On the PC, in a terminal opened in this repo's folder (the one with <code>platformio.ini</code>), with the Nano on USB and the unit on 12 V through the power lead in U8. Stop <code>pio device monitor</code> with Ctrl+C before each upload, because it holds the port.</p>
+    <ol class="steps" data-stage="first">
+      <li><input type="checkbox" id="ft1"><label for="ft1">Flash the offset tool: <code>pio run -e offset_tool -t upload</code>, then <code>pio device monitor</code>. Type an offset (start with <code>100</code>) and press Enter.</label>
+        <div class="note">If the upload fails with a sync error, the Nano has the newer bootloader: change <code>board</code> to <code>nanoatmega328new</code> in the <code>unit</code> and <code>offset_tool</code> sections of <code>platformio.ini</code>.</div></li>
+      <li><input type="checkbox" id="ft2"><label for="ft2">Flash the unit firmware with the DIP at 0000: <code>pio run -e unit -t upload</code>. On power-up the drum homes. The <b>blank</b> flap should show.</label>
+        <div class="note">If a neighbouring flap shows, repeat step 1 with a larger or smaller offset. About 45 steps is one flap.</div></li>
+      <li><input type="checkbox" id="ft3"><label for="ft3">Check homing both ways: power up with the magnet right at the sensor, then again away from it. Note whether it backs out and turns, or stops immediately. Either is fine if the blank flap ends up showing. The homing code has never been tested on this hardware, so if it doesn't home, see step 4 of the bring-up list in <code>hardware/wiring.md</code>.</label></li>
+      <li><input type="checkbox" id="ft4"><label for="ft4">Optional: enable <code>#define test</code> in the unit firmware. It should show blank, Z, A, U, N, the Instagram logo, 0, 1, 2, 9 in order. Comment the line out again and reflash afterwards.</label></li>
+    </ol>
+    <div class="warn"><b>Then</b>Build the remaining <span class="Nm1">8</span> drums and units, and run steps 1–2 on each Nano with its own DIP setting.</div>
+    <div class="tally" data-tally="flash" data-label="Units flashed and homing to the blank flap"></div>
+  </section>
+
+  <section id="case">
+    <div class="stage-h"><h2>5 · Case</h2><span>files for <b class="N">9</b> units</span></div>
+    <div class="info">
+      <h3>Read this first</h3>
+      <ul>
+        <li><b>Front</b> is the side where the flaps show. <b>Back</b> is the side the PCBs face. <b>Left</b> and <b>right</b> are always as seen from the front, so when you work from the back, the left end is on your right.</li>
+        <li>The case is three layers, front to back: <b>front cover</b> (an open box), <b>middle frame</b> (a flat 15 mm plate with one window per unit) and <b>back cover</b> (a shallow tray). They sit edge to edge, held by screws; nothing slides inside anything.</li>
+        <li>Each layer is printed as <b>Left</b>, <b>Center</b> and <b>Right</b> pieces. At each seam, the Center piece's tabs lie over the ends of the Left or Right piece, in the top and bottom edges. A joint screw goes in from the outside top or bottom edge, through the Center tab, into a nut sitting in a hex pocket inside the Left or Right piece. The pocket opens on the inside of the case.</li>
+        <li>Work on a soft cloth. Melt inserts at about 200 °C, push straight, and stop when they're flush.</li>
+      </ul>
+    </div>
+    <div class="tbl"><table>
+      <thead><tr><th>Middle frame hole</th><th>Where (windows counted from the left, seen from the front)</th><th>Used for</th></tr></thead>
+      <tbody>
+        <tr><td>Counterbored on the back</td><td>4 around each window: 2 just above, 2 just below</td><td>Units: M3×16, 2 per window (the diagonal pair with nuts behind)</td></tr>
+        <tr><td>Counterbored on the back</td><td>6 in the outer rows, close to the top and bottom edges, between windows <span class="fcWin">1–2, 4–5, 8–9</span></td><td>Front cover: M3×16 into its inserts</td></tr>
+        <tr><td>Plain 4 mm, no counterbore</td><td>8 in the outer rows, above and below windows <span class="insWin">1, 3, 6, 9</span></td><td>M3 inserts. The back cover screws into these</td></tr>
+        <tr><td>Vertical, in the top and bottom edges</td><td>At the two seams, through the Center piece's tabs</td><td>Joints: M4×20 + M4 nut</td></tr>
+      </tbody>
+    </table></div>
+    <div class="anim-host" data-seq="case" data-label="case assembly"></div>
+    <p class="hint">Drag to turn the model, pinch or scroll to zoom. Click a step again to replay it. <span class="swatch" style="background:#e0a800"></span>Yellow marks the parts a step moves, <span class="swatch" style="background:#ff5a1f"></span>orange the screws, nuts and inserts it adds.</p>
+    <ol class="steps" data-stage="case">
+      <li><input type="checkbox" id="ca1"><label for="ca1">Dry-fit each layer before anything else: lay its Left, Center and Right pieces face down and push the seams together. They should close without force, with the joint holes lined up. Trim or sand any that don't.</label>
+        <div class="kit"><button class="go3d" type="button" data-seq="case" data-anim="2">3D</button></div></li>
+      <li><input type="checkbox" id="ca2"><label for="ca2"><b>Middle frame inserts.</b> Lay the three middle frame pieces back up: the back is the face with the counterbored holes. Find the 8 plain 4 mm holes in the outer rows, above and below windows <span class="insWin">1, 3, 6, 9</span>. Melt an M3 insert into each from the back.</label>
+        <div class="kit"><span>8× M3 insert</span><button class="go3d" type="button" data-seq="case" data-anim="1">3D</button></div>
+        <figure class="photo"><img src="img/mf-inserts.png" alt="Middle frame drawing with arrows at the eight insert holes" loading="lazy" onerror="this.parentNode.remove()"><figcaption>Upstream's drawing for the 10-unit frame. On a shorter case the window numbers above are what counts.</figcaption></figure></li>
+      <li><input type="checkbox" id="ca3"><label for="ca3"><b>Join the middle frame.</b> Put the Center piece between Left and Right so its tabs lie over their ends. Drop an <b>M4 nut</b> into each of the 4 hex pockets, which open toward the windows. Then drive an <b>M4×20</b> into each joint from the outer top or bottom edge, through the Center tab and into the nut.</label>
+        <div class="kit"><span>4× M4 nut</span><span>4× M4×20</span><button class="go3d" type="button" data-seq="case" data-anim="2">3D</button></div>
+        <div class="note">A bit of tape over a pocket keeps its nut in while you turn the frame over.</div></li>
+      <li><input type="checkbox" id="ca4"><label for="ca4"><b>Fit the units.</b> Hold each unit against the front of the middle frame with its PCB through a window. Its two nuts line up with two of the four holes around that window. Unit 0 (DIP 0000) goes behind the leftmost window, seen from the front, then 1, 2 … to the right.</label>
+        <div class="kit"><button class="go3d" type="button" data-seq="case" data-anim="3">3D</button></div></li>
+      <li><input type="checkbox" id="ca5"><label for="ca5"><b>Screw the units on.</b> From the back, drive an <b>M3×16</b> socket-head screw through each of the two holes that have a nut behind them and tighten. The other two holes stay empty.</label>
+        <div class="kit"><span>2× M3×16 per unit</span><button class="go3d" type="button" data-seq="case" data-anim="4">3D</button></div>
+        <figure class="photo"><img src="img/units-on-frame.jpeg" alt="Back of the middle frame with all units mounted and wired" loading="lazy" onerror="this.parentNode.remove()"></figure></li>
+      <li><input type="checkbox" id="ca6"><label for="ca6"><b>Daisy-chain the units</b> with the <span class="Nm1">8</span> double-ended XH-4 cables: <b>U7 of each unit to U8 of the next</b>, starting with U7 of unit 0. Unit 0's U8 stays free for the power lead, and the last unit's U7 stays empty.</label>
+        <figure class="wire"><div class="wire-scroll" id="chain"></div><figcaption>Seen from the back, so unit 0 is on the right. This shows the order only: find U7 and U8 by the labels printed on each board.</figcaption></figure>
+        <div class="note">Check each cable before any power, because a reversed one puts 12 V on SCL. Meter between the two units: left leg of the 7805 to left leg of the 7805, Nano A4 to A4, A5 to A5, and GND to GND must all beep.</div>
+        <figure class="photo"><img src="img/cables.jpeg" alt="A hall sensor cable and an XH-4 bus cable" loading="lazy" onerror="this.parentNode.remove()"><figcaption>Upstream's cables, shorter than yours. Any slack in the 100 mm and 300 mm cables tucks into the case.</figcaption></figure></li>
+      <li><input type="checkbox" id="ca7"><label for="ca7"><b>Front cover inserts.</b> Stand each front cover piece on its face so the open back edge points up. Each piece has two 4 mm holes in that edge, one in the top wall and one in the bottom wall. Melt an M3 insert into each, 6 in total.</label>
+        <div class="kit"><span>6× M3 insert</span><button class="go3d" type="button" data-seq="case" data-anim="5">3D</button></div></li>
+      <li><input type="checkbox" id="ca8"><label for="ca8"><b>Join the front cover.</b> It's the same idea as the middle frame, with 4 joints per seam. Drop an <b>M3 nut</b> into each of the 8 hex pockets inside the top and bottom walls of the Left and Right pieces. At each seam there are 2 near the front face and 2 near the back edge. Drive an <b>M3×8</b> into each from the outer top or bottom edge, through the Center piece.</label>
+        <div class="kit"><span>8× M3 nut</span><span>8× M3×8</span><button class="go3d" type="button" data-seq="case" data-anim="6">3D</button></div></li>
+      <li><input type="checkbox" id="ca9"><label for="ca9"><b>Put the front cover on.</b> Lay the cover face down. Lower the middle frame onto it, units first, so the frame's front face sits flat on the cover's back edge. The cover's inserts line up with the counterbored holes in the frame's outer rows.</label>
+        <div class="kit"><button class="go3d" type="button" data-seq="case" data-anim="7">3D</button></div></li>
+      <li><input type="checkbox" id="ca10"><label for="ca10"><b>Screw the front cover on</b> from the back: an <b>M3×16</b> through each of the 6 counterbored outer-row holes (between windows <span class="fcWin">1–2, 4–5, 8–9</span>, top and bottom) into the cover's inserts.</label>
+        <div class="kit"><span>6× M3×16</span><button class="go3d" type="button" data-seq="case" data-anim="8">3D</button></div></li>
+      <li><input type="checkbox" id="ca11"><label for="ca11"><b>Join the back cover</b>, the same way as the front cover: an <b>M3 nut</b> in each of the 4 hex pockets, and an <b>M3×8</b> into each from the outer top or bottom edge. Then fit the rocker switch and the DC jack into the two holes in the left end: the switch in the rectangular hole, the jack in the round one. Unsolder the jack from the power lead first if it won't pass through the hole.</label>
+        <div class="kit"><span>4× M3 nut</span><span>4× M3×8</span><button class="go3d" type="button" data-seq="case" data-anim="9">3D</button></div></li>
+      <li><input type="checkbox" id="ca12"><label for="ca12"><b>Close the back cover</b> only after stage 7 passes. Set it on the back of the middle frame and drive an <b>M3×16</b> through each of its 8 deep counterbored holes into the middle frame's inserts. The two keyholes in the back are for hanging it on a wall.</label>
+        <div class="kit"><span>8× M3×16</span><button class="go3d" type="button" data-seq="case" data-anim="10">3D</button></div></li>
+    </ol>
+  </section>
+
+  <section id="esp">
+    <div class="stage-h"><h2>6 · Power and ESP32</h2><span>Option B in <code>hardware/wiring.md</code></span></div>
+    <div class="warn"><b>3.3 V only</b>The ESP32 is not 5 V tolerant. Never connect SDA/SCL straight to the bus. Set the buck converter to 5.0 V <i>before</i> connecting anything to it.</div>
+    <figure class="wire"><div class="wire-scroll" id="wiring"></div><figcaption>Every connection for Option B. Dots are joints. Lines that cross without a dot are not connected. On a narrow screen, scroll the drawing sideways.</figcaption></figure>
+    <details><summary>The same wiring as text</summary>
+    <pre>Power (power lead in unit 0's U8)
+  DC jack + ── switch ──┬── lead 12V
+                        ├── buck IN+
+                        └── 1000 µF +
+  DC jack − ────────────┬── lead GND
+                        ├── buck IN−
+                        └── 1000 µF − (striped side)
+
+  buck OUT+ ──┬── ESP32 VIN
+              └── level shifter HV
+  buck OUT− ──┬── ESP32 GND
+              └── level shifter GND
+
+Signals
+  lead SDA ── shifter HV1    LV1 ── ESP32 GPIO21
+  lead SCL ── shifter HV2    LV2 ── ESP32 GPIO22
+                             LV  ── ESP32 3V3</pre>
+    </details>
+    <ol class="steps" data-stage="esp">
+      <li><input type="checkbox" id="es1"><label for="es1">Set the buck converter to 5.0 V: feed its IN+ and IN− with 12 V, measure OUT+ to OUT−, and turn the trimmer. Nothing else is connected to its output yet.</label></li>
+      <li><input type="checkbox" id="es2"><label for="es2">Wire as above with 22 AWG wire for everything carrying 12 V or 5 V. Cut the power lead's 12V wire and put the rocker switch in it. Use the wire tags you made in stage 1, not cable colours, and insulate every joint.</label></li>
+      <li><input type="checkbox" id="es6"><label for="es6">Stick the ESP32, buck converter and level shifter inside the left piece of the back cover with double-sided foam tape, clear of the keyhole and the screw bosses. Leave the ESP32's USB port reachable. The wires must let the cover lie open beside the case. The cover is 23 mm deep.</label></li>
+      <li><input type="checkbox" id="es3"><label for="es3">Flash the master: <code>pio run -e master -t upload</code>, then <code>pio run -e master -t uploadfs</code>.</label></li>
+            <li><input type="checkbox" id="es5"><label for="es5">Serial monitor at 115200: it prints <code>[bus] scan: 1/9 units answered: 0x10=ok …</code> with just unit 0 connected, and the rest <code>MISSING</code>. Type text; it should appear on the flap.</label></li>
+      <li><input type="checkbox" id="es4"><label for="es4">Connect it to Wi-Fi: follow <b>First-time setup</b> in <code>README.md</code>. If you built anything other than 9 units, set <b>units = <span class="N">9</span></b> on its Settings page, because the firmware's default is 9.</label></li>
+    </ol>
+  </section>
+
+  <section id="all">
+    <div class="stage-h"><h2>7 · All units</h2><span>addresses and full test</span></div>
+    <p>Addresses come from the DIP switch, read at power-up: 0x10 plus the switch value, with switch 1 as the highest bit. To change one, set it and power the unit off and on again. Reflashing the ESP32 later means taking the back cover off.</p>
+    <div class="tbl"><table>
+      <thead><tr><th>Unit (left → right)</th><th>DIP 1 2 3 4</th><th>Address</th></tr></thead>
+      <tbody id="dip"></tbody>
+    </table></div>
+    <ol class="steps" data-stage="all">
+      <li><input type="checkbox" id="al1"><label for="al1">Connect the units one at a time. After each, run <code>!scan</code> in the serial console (or open the Status page) and check that its address answers.</label></li>
+      <li><input type="checkbox" id="al2"><label for="al2">Full load test: show all 8s, then all blanks, then all 8s. Measure the 12 V rail while they flip: it must stay above about 11 V.</label></li>
+      <li><input type="checkbox" id="al3"><label for="al3">Close the back cover (stage 5, step 12). Leave it cycling for 24 hours. The Status page should show <code>last reset: power_on</code>, about 24 h of uptime, and no <code>[bus] timeout</code> lines in the log.</label></li>
+    </ol>
+    <button class="reset" id="reset" type="button">Clear all ticks</button>
+  </section>
+
+  <section id="trouble">
+    <div class="stage-h"><h2>Troubleshooting</h2><span>hardware faults, by symptom</span></div>
+    <div class="tbl"><table>
+      <thead><tr><th>Symptom</th><th>Check</th></tr></thead>
+      <tbody>
+        <tr><td>No 5 V at the Nano header, or the 7805 gets hot</td><td>Disconnect the power. Check the 7805's direction (<a href="#pcb5">stage 1, step 5</a>), then repeat the meter check for shorts (<a href="#pcb6">step 6</a>). Look for solder bridges on U4.</td></tr>
+        <tr><td>Upload to a Nano fails with a sync error</td><td>The Nano has the newer bootloader: set <code>board</code> to <code>nanoatmega328new</code> (<a href="#ft1">stage 4, step 1</a>). If the port is busy, stop <code>pio device monitor</code> first.</td></tr>
+        <tr><td>The sensor's LED never lights when the magnet is near</td><td>The hall cable is wired by position and not by function, so the sensor has no power (<a href="#dm9">stage 2, step 2</a>). Check that the board has 12 V.</td></tr>
+        <tr><td>A neighbouring flap shows after homing</td><td>Run the offset tool again for that unit (<a href="#ft1">stage 4, step 1</a>). One flap is about 45 steps.</td></tr>
+        <tr><td>A drum keeps turning and never homes</td><td>The sensor doesn't see the magnet. Check that the magnet's marked face points out (<a href="#dm3">stage 2, step 4</a>), that it passes close to the sensor (<a href="#ut6">stage 3, step 6</a>), and that the sensor is plugged into U6. A unit gives up after 3 turns. See also step 4 of the bring-up list in <code>hardware/wiring.md</code>.</td></tr>
+        <tr><td>The scan shows one unit as <code>MISSING</code></td><td>Check its DIP switch against the table in <a href="#all">stage 7</a>, then power it off and on, because the switch is only read at power-up. Check its bus cable (<a href="#ca6">stage 5, step 6</a>) and that its Nano is fully seated. The Nano must run this repo's unit firmware.</td></tr>
+        <tr><td>No unit answers the scan</td><td>SDA and SCL are swapped, a GND is missing, or the level shifter is wired wrong. Compare every wire with the drawing in <a href="#esp">stage 6</a>.</td></tr>
+        <tr><td>Units stutter or restart when they all move</td><td>The 12 V rail is sagging: each 7805 needs at least 7 V in. Use a 12 V supply of 3 A or more, fit the 1000 µF capacitor, and keep the power wires short (<a href="#al2">stage 7, step 2</a>).</td></tr>
+        <tr><td>The web page is blank or shows 404</td><td>The filesystem wasn't uploaded: <code>pio run -e master -t uploadfs</code> (<a href="#es3">stage 6, step 4</a>).</td></tr>
+        <tr><td>Wi-Fi, accounts, tokens or wrong counts</td><td>See <b>Troubleshooting</b> in <code>README.md</code>.</td></tr>
+      </tbody>
+    </table></div>
+  </section>
+</main>
+<dialog class="zoom" id="zoom" aria-label="Enlarged photo"></dialog>
+
+<script>
+(function () {
+  const PER_UNIT = [
+    ['M4×8 pan head', 'Stepper', 2], ['M2×4', 'Hall sensor', 2], ['M2×8 pan head', 'Drum halves', 2],
+    ['M2 heat insert', 'Drum', 2], ['M3×6', 'PCB', 2], ['M3 nut', 'UnitFrame', 2], ['M3×16 socket head', 'UnitFrame to MiddleFrame', 2],
+  ];
+  const CASE = [
+    ['M3×16 socket head', 'FrontCover 6, BackCover 8', 14], ['M3 nut', 'FrontCover 8, BackCover 4', 12],
+    ['M3×8 pan head', 'FrontCover 8, BackCover 4', 12], ['M3 heat insert', 'MiddleFrame 8, FrontCover 6', 14],
+    ['M4×20 pan head', 'MiddleFrame joints', 4], ['M4 nut', 'MiddleFrame joints', 4],
+  ];
+  const WIDTH = { 7: 362, 8: 412, 9: 463, 10: 513 };
+  // Where each case layer of the shorter cases loses a unit (CAD x in mm, as in tools/make_assembly.py).
+  const PITCH_MM = 50.4;
+  const CUTS = {
+    10: { mf: [], fc: [], bc: [] },
+    9: { mf: [23.3], fc: [28.3], bc: [9.7] },
+    8: { mf: [23.3, 311], fc: [28.3, 311], bc: [9.7, 311] },
+    7: { mf: [23.3, 81, 311], fc: [28.3, 81, 311], bc: [9.7, 81, 311] },
+  };
+  const KEY = 'sf-guide';
+  // done: ticked steps by id. units: per repeated stage, which unit numbers are finished.
+  let state = { n: 9, done: {}, units: {} };
+  try { const s = JSON.parse(localStorage.getItem(KEY) || 'null'); if (s && WIDTH[s.n]) state = { n: s.n, done: s.done || {}, units: s.units || {} }; } catch (e) {}
+  const save = () => { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {} };
+
+  function caseFiles(n) {
+    const left = n === 10 ? 'upstream */*Left' : `Case ${n}-unit/*Left_${n}unit`;
+    const right = n >= 9 ? 'upstream */*Right' : `Case ${n}-unit/*Right_${n}unit`;
+    return `Left: ${left} · Center: upstream */*Center · Right: ${right} · about ${WIDTH[n]} mm wide`;
+  }
+
+  // Window numbers (1 = leftmost from the front) for holes at CAD x on the 10-unit frame.
+  const shiftX = (x, cuts) => x - PITCH_MM * cuts.filter((c) => c + PITCH_MM <= x).length;
+  const join = (a) => a.length > 1 ? `${a.slice(0, -1).join(', ')} and ${a[a.length - 1]}` : a.join('');
+  const windows = (xs, cuts) => join(xs.map((x) => {
+    const w = (shiftX(x, cuts) + 1.8) / PITCH_MM, r = Math.round(w);
+    return Math.abs(w - r) < 0.25 ? `${r + 1}` : `${Math.floor(w) + 1}–${Math.floor(w) + 2}`;
+  }));
+
+  // Stage 6 wiring, drawn on a 202 x 116 grid. Pin names are the ones printed on the modules.
+  function wiringSvg() {
+    const box = (x, y, w, h) => `<rect class="box" x="${x}" y="${y}" width="${w}" height="${h}" rx="1"/>`;
+    const txt = (cls, x, y, s, anchor) => `<text${cls ? ` class="${cls}"` : ''} x="${x}" y="${y}"${anchor ? ` style="text-anchor:${anchor}"` : ''}>${s}</text>`;
+    const L = (x, y, s) => txt('', x + 1.2, y, s), R = (x, y, s) => txt('', x - 1.2, y, s, 'end');
+    const T = (x, y, s) => txt('', x, y + 2.6, s, 'middle'), B = (x, y, s) => txt('', x, y - 2.6, s, 'middle');
+    const wire = (net, d) => `<path class="${net}" d="${d}"/>`;
+    const dot = (net, x, y) => `<circle class="${net}" cx="${x}" cy="${y}" r="1"/>`;
+    return `<svg viewBox="0 0 202 116" role="img" aria-label="Wiring of the DC jack, switch, capacitor, buck converter, ESP32, level shifter and power lead. The same connections are listed as text below.">` +
+      wire('n12', 'M24 16H32') + wire('n12', 'M50 16H178') + wire('n12', 'M58 16V50') + wire('n12', 'M80 16V36') +
+      wire('ngnd', 'M24 26H29V104H178') + wire('ngnd', 'M58 66V104') + wire('ngnd', 'M80 64V104') + wire('ngnd', 'M100 58H104V104') + wire('ngnd', 'M119 80V104') + wire('ngnd', 'M152 74V104') +
+      wire('n5', 'M100 42H104V28H170V44H166') + wire('n5', 'M119 28V36') +
+      wire('n3', 'M130 44H138') + wire('nsda', 'M130 52H138') + wire('nsda', 'M166 52H178') + wire('nscl', 'M130 62H138') + wire('nscl', 'M166 62H178') +
+      dot('n12', 58, 16) + dot('n12', 80, 16) + dot('n5', 119, 28) +
+      [58, 80, 104, 119, 152].map((x) => dot('ngnd', x, 104)).join('') +
+      txt('net', 140, 16, '12V') + txt('net', 140, 104, 'GND') + txt('net', 144, 28, '5V') +
+      box(4, 8, 20, 32) + R(24, 16, '+') + R(24, 26, '−') + txt('t', 14, 33, 'DC JACK') + txt('s', 14, 37, '12 V in') +
+      box(32, 11, 18, 10) + txt('t', 41, 16, 'SWITCH') +
+      box(53, 50, 10, 16) + T(58, 50, '+') + B(58, 66, '−') + txt('', 51.5, 56, '1000 µF', 'end') + txt('s', 51.5, 60, 'stripe is −', 'end') +
+      box(76, 36, 24, 28) + T(80, 36, 'IN+') + B(80, 64, 'IN−') + R(100, 42, 'OUT+') + R(100, 58, 'OUT−') + txt('t', 86.5, 49, 'BUCK') + txt('s', 86.5, 53, 'set to 5.0 V') +
+      box(108, 36, 22, 44) + T(119, 36, 'VIN') + B(119, 80, 'GND') + R(130, 44, '3V3') + R(130, 52, 'GPIO21') + R(130, 62, 'GPIO22') + txt('t', 117, 70, 'ESP32') +
+      box(138, 40, 28, 34) + L(138, 44, 'LV') + L(138, 52, 'LV1') + L(138, 62, 'LV2') + R(166, 44, 'HV') + R(166, 52, 'HV1') + R(166, 62, 'HV2') + B(152, 74, 'GND') + txt('t', 152, 55, 'LEVEL') + txt('t', 152, 59.5, 'SHIFTER') +
+      box(178, 8, 20, 104) + L(178, 16, '12V') + L(178, 52, 'SDA') + L(178, 62, 'SCL') + L(178, 104, 'GND') + txt('t', 188, 30, 'POWER') + txt('t', 188, 34.5, 'LEAD') + txt('s', 188, 39, 'to unit 0, U8') +
+      '</svg>';
+  }
+  document.getElementById('wiring').innerHTML = wiringSvg();
+
+  // Stage 5 bus chain for n units, seen from the back: unit 0 on the right.
+  function chainSvg(n) {
+    const bw = 17, gap = 7, x0 = 4, y = 3, h = 17, py = y + 12.5;
+    let s = '';
+    for (let k = 0; k < n; k++) {
+      const x = x0 + (n - 1 - k) * (bw + gap);
+      if (k < n - 1) s += `<path class="nbus" d="M${x} ${py}H${x - gap}"/>`;
+      s += `<rect class="box" x="${x}" y="${y}" width="${bw}" height="${h}" rx="1"/><text class="t big" x="${x + bw / 2}" y="${y + 5}">${k}</text>` +
+        `<text class="p" x="${x + 1.2}" y="${py}">U7</text><text class="p" x="${x + bw - 1.2}" y="${py}" style="text-anchor:end">U8</text>`;
+    }
+    const xr = x0 + n * (bw + gap) - gap;
+    s += `<path class="nbus" d="M${xr} ${py}H${xr + 7}"/><text class="p" x="${xr + 7}" y="${y + h + 4}" style="text-anchor:end">power lead into U8</text>` +
+      `<text class="p" x="${x0}" y="${y + h + 4}">U7 empty</text>`;
+    return `<svg viewBox="0 0 ${xr + 10} ${y + h + 8}" role="img" aria-label="${n} units in a row, unit 0 on the right. The power lead goes into U8 of unit 0. U7 of each unit is linked to U8 of the next. U7 of unit ${n - 1} is empty.">${s}</svg>`;
+  }
+
+  // Board maps, in mm from hardware/pcb/PickAndPlace_*.csv and the silkscreen. x runs right, y down
+  // from the top-left corner, as on the top side; the bottom view mirrors x.
+  const W = 40, H = 80;
+  const TOP = [
+    { ref: 'U10', n: 6, lab: [13, 14.5], x: 2, y: 7, w: 5.7, h: 14.9, pads: [[5.4, 9.42], [5.4, 11.96], [5.4, 14.5], [5.4, 17.04], [5.4, 19.58]] },
+    { ref: 'U6', n: 7, lab: [13, 28.5], x: 1.9, y: 23.4, w: 6, h: 10, pads: [[5.4, 26], [5.4, 28.5], [5.4, 31]] },
+    { ref: 'SW1', n: 4, lab: [9.6, 42], x: 2.9, y: 37.1, w: 11.7, h: 9.7, pads: [[4.99, 38.19], [7.53, 38.19], [10.07, 38.19], [12.61, 38.19], [4.99, 45.81], [7.53, 45.81], [10.07, 45.81], [12.61, 45.81]] },
+    { ref: 'U1 Nano', n: 5, lab: [31, 26.9], x: 20.9, y: 5.3, w: 17.7, h: 43.1, pads: Array.from({ length: 30 }, (_, i) => [i < 15 ? 22.18 : 37.42, 9.12 + 2.54 * (i % 15)]) },
+    { ref: 'U3', n: 9, lab: [21.5, 68.4], x: 26.4, y: 66, w: 10.7, h: 4.9, pads: [[29.26, 68.9], [31.8, 68.9], [34.34, 68.9]] },
+    { ref: 'U7', n: 8, lab: [14, 77.5], x: 6.8, y: 73.3, w: 12.5, h: 5.8, pads: [[9.19, 75.7], [11.73, 75.7], [14.27, 75.7], [16.81, 75.7]] },
+    { ref: 'U8', n: 8, lab: [27.5, 74.6], x: 20.2, y: 73.3, w: 12.5, h: 5.8, pads: [[22.69, 76.7], [25.23, 76.7], [27.77, 76.7], [30.31, 76.7]] },
+    { ref: 'U2', x: 14.5, y: 49.6, w: 24.1, h: 15.2 },
+    { ref: 'USB', x: 25.9, y: 1.6, w: 7.7, h: 3.6 },
+  ];
+  const BOTTOM = [
+    { ref: 'U4', n: 1, lab: [31.5, 7.7], x: 13, y: 2.7, w: 4, h: 10, pin1: [17.97, 3.26] },
+    { ref: 'C2', n: 2, lab: [12, 60.7], x: 21.9, y: 60.05, w: 2, h: 1.3 },
+    { ref: 'C1', n: 3, lab: [12, 64.9], x: 21.9, y: 64.25, w: 2, h: 1.3 },
+    ...[['U9', 30.99, 55.88, 3.6, 6.6], ['C5', 22.8, 56.7, 3.2, 1.6], ['R3', 22.9, 53.2, 2, 1.3], ['Q1', 25.4, 48.01, 2.9, 1.3], ['Q2', 18.54, 48.01, 2.9, 1.3],
+      ['R1', 30.2, 47, 1.3, 2], ['R2', 17.7, 41.9, 2, 1.3], ['R4', 17.7, 38.4, 2, 1.3]]
+      .map(([ref, cx, cy, w, h]) => ({ ref, x: cx - w / 2, y: cy - h / 2, w, h })),
+  ];
+  const HOLES = [[3, 3], [37, 3], [3, 77], [37, 77]];
+  function boardMap(parts, mirror) {
+    const mx = (x) => mirror ? W - x : x;
+    const rect = (p) => `x="${(mirror ? W - p.x - p.w : p.x).toFixed(2)}" y="${p.y}" width="${p.w}" height="${p.h}"`;
+    const body = parts.map((p) => {
+      const cx = mx(p.x + p.w / 2), cy = p.y + p.h / 2;
+      if (!p.n) {
+        const tiny = p.h < 3 || p.w < 4;
+        return `<rect class="empty" ${rect(p)}/><text class="dim" x="${(tiny ? cx + (p.ref === 'R1' ? -1 : 1) * (p.w / 2 + 2.3) : cx).toFixed(2)}" y="${cy}">${p.ref}</text>`;
+      }
+      const pads = (p.pads || []).map(([x, y]) => `<circle class="pad" cx="${mx(x).toFixed(2)}" cy="${y}" r=".55"/>`).join('');
+      const pin1 = p.pin1 ? `<circle class="pad" cx="${mx(p.pin1[0]).toFixed(2)}" cy="${p.pin1[1]}" r=".7"/>` : '';
+      const [lx, ly] = p.lab, bx = lx - p.ref.length * .66 - 1.9;
+      return `<rect class="part" ${rect(p)}/>${pads}${pin1}<circle class="badge" cx="${bx.toFixed(2)}" cy="${ly}" r="1.5"/>` +
+        `<text class="num" x="${bx.toFixed(2)}" y="${ly}">${p.n}</text><text x="${lx}" y="${ly}">${p.ref}</text>`;
+    }).join('');
+    // Orientation marks on the top side: the DIP's ON edge and the 7805's metal tab.
+    const marks = mirror ? '' : '<text class="dim" x="4.6" y="40">ON</text><line class="tab" x1="26.4" y1="66.7" x2="37.1" y2="66.7"/><text class="dim" x="23.6" y="66.2">tab</text>';
+    const edge = `<text class="dim" x="${W / 2}" y="-1.6">top edge</text>`;
+    const holes = HOLES.map(([x, y]) => `<circle class="hole" cx="${mx(x)}" cy="${y}" r="1.6"/>`).join('');
+    return `<svg viewBox="-1 -3.4 ${W + 2} ${H + 4.6}" role="img" aria-label="${mirror ? 'Bottom' : 'Top'} side of the board with each part's position">` +
+      `${edge}<rect class="board" width="${W}" height="${H}"/>${holes}${body}${marks}</svg>`;
+  }
+  document.getElementById('pcbTop').innerHTML = boardMap(TOP, false);
+  document.getElementById('pcbBottom').innerHTML = boardMap(BOTTOM, true);
+
+  function render() {
+    const n = state.n;
+    document.querySelectorAll('.sizes button').forEach(b => b.setAttribute('aria-pressed', String(+b.dataset.n === n)));
+    document.querySelectorAll('.N').forEach(e => e.textContent = n);
+    document.querySelectorAll('.Nm1').forEach(e => e.textContent = n - 1);
+    document.querySelectorAll('.insWin').forEach(e => e.textContent = windows([-5, 146, 297, 448], CUTS[n].mf));
+    document.querySelectorAll('.fcWin').forEach(e => e.textContent = windows([20, 222, 423], CUTS[n].mf));
+    document.getElementById('chain').innerHTML = chainSvg(n);
+    document.getElementById('flaps').textContent = n * 45;
+    document.getElementById('busCables').textContent = n - 1;
+    document.getElementById('headers').textContent = n * 2;
+    document.getElementById('xh4').textContent = n * 2;
+    document.getElementById('caseFiles').textContent = caseFiles(n);
+    // Fasteners: merge per-unit and case rows by type.
+    const tot = new Map();
+    for (const [t, w, q] of PER_UNIT) { const r = tot.get(t) || { w: [], q: 0 }; r.w.push(`${w} ${q}/unit`); r.q += q * n; tot.set(t, r); }
+    for (const [t, w, q] of CASE) { const r = tot.get(t) || { w: [], q: 0 }; r.w.push(w); r.q += q; tot.set(t, r); }
+    document.getElementById('fasteners').innerHTML = [...tot].map(([t, r]) =>
+      `<tr><td>${t}</td><td>${r.w.join('; ')}</td><td class="n">${r.q}</td></tr>`).join('');
+    document.getElementById('dip').innerHTML = Array.from({ length: n }, (_, u) => {
+      const bits = u.toString(2).padStart(4, '0').split('').map(b => b === '1' ? 'ON' : 'off').join(' ');
+      return `<tr><td class="n" style="text-align:left">${u}</td><td><code>${bits}</code></td><td><code>0x${(0x10 + u).toString(16)}</code></td></tr>`;
+    }).join('');
+    const boxes = document.querySelectorAll('.steps input[type=checkbox]');
+    let c = 0;
+    boxes.forEach(b => { b.checked = !!state.done[b.id]; b.closest('li').classList.toggle('done', b.checked); if (b.checked) c++; });
+    document.getElementById('prog').textContent = `${c} / ${boxes.length} steps`;
+    document.getElementById('cont').hidden = c === boxes.length;
+    // One chip per unit for the stages that are repeated. Chips are rebuilt only when the size changes, so focus stays put.
+    document.querySelectorAll('.tally').forEach((el) => {
+      const t = state.units[el.dataset.tally] || {};
+      if (el.querySelectorAll('button').length !== n) {
+        el.innerHTML = `<b>${el.dataset.label}</b>` + Array.from({ length: n }, (_, u) =>
+          `<button type="button" data-u="${u}" aria-label="Unit ${u}">${u}</button>`).join('') + '<span class="ct"></span>';
+      }
+      let d = 0;
+      el.querySelectorAll('button').forEach((b) => { const on = !!t[b.dataset.u]; if (on) d++; b.setAttribute('aria-pressed', String(on)); });
+      el.querySelector('.ct').textContent = `${d} / ${n}`;
+      el.dataset.full = d === n ? '1' : '';
+    });
+    // Stage links: ticked steps out of the total, or a tick once the steps and the unit chips are all done.
+    document.querySelectorAll('nav a').forEach((a) => {
+      const sec = document.querySelector(a.getAttribute('href'));
+      const bs = [...sec.querySelectorAll('.steps input[type=checkbox]')];
+      if (!bs.length) return;
+      const d = bs.filter((b) => b.checked).length;
+      const full = d === bs.length && [...sec.querySelectorAll('.tally')].every((t) => t.dataset.full);
+      const ct = a.querySelector('.ct') || a.appendChild(Object.assign(document.createElement('span'), { className: 'ct' }));
+      ct.textContent = full ? '✓' : `${d}/${bs.length}`;
+      ct.title = full ? 'Stage finished' : `${d} of ${bs.length} steps ticked`;
+      a.classList.toggle('complete', full);
+    });
+    document.dispatchEvent(new CustomEvent('sf-size', { detail: n }));
+  }
+  window.sf = { CUTS, PITCH_MM, shiftX, windows, TOP };
+
+  const calm = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  document.getElementById('cont').addEventListener('click', () => {
+    const next = [...document.querySelectorAll('.steps input[type=checkbox]')].find((b) => !b.checked);
+    if (!next) return;
+    next.closest('li').scrollIntoView({ behavior: calm ? 'auto' : 'smooth', block: 'center' });
+    next.focus({ preventScroll: true });
+  });
+  document.querySelectorAll('.tally').forEach((el) => el.addEventListener('click', (e) => {
+    const b = e.target.closest('button'); if (!b) return;
+    const t = state.units[el.dataset.tally] || (state.units[el.dataset.tally] = {});
+    if (t[b.dataset.u]) delete t[b.dataset.u]; else t[b.dataset.u] = 1;
+    save(); render();
+  }));
+
+  // Photos open full size in a dialog; a click, Esc or Enter closes it.
+  const zoom = document.getElementById('zoom'), zoomImg = zoom.appendChild(document.createElement('img'));
+  const openZoom = (img) => { zoomImg.src = img.currentSrc || img.src; zoomImg.alt = img.alt; zoom.showModal(); };
+  document.querySelectorAll('.photo img').forEach((img) => {
+    img.tabIndex = 0; img.setAttribute('role', 'button'); img.setAttribute('aria-label', `Enlarge: ${img.alt}`);
+    img.addEventListener('click', () => openZoom(img));
+    img.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openZoom(img); } });
+  });
+  zoom.addEventListener('click', () => zoom.close());
+
+  document.querySelectorAll('.sizes button').forEach(b => b.addEventListener('click', () => { state.n = +b.dataset.n; save(); render(); }));
+  document.querySelectorAll('.steps input[type=checkbox]').forEach(b => b.addEventListener('change', () => {
+    if (b.checked) state.done[b.id] = 1; else delete state.done[b.id]; save(); render();
+  }));
+  let armed = false;
+  const reset = document.getElementById('reset');
+  reset.addEventListener('click', () => {
+    if (!armed) { armed = true; reset.textContent = 'Click again to clear'; setTimeout(() => { armed = false; reset.textContent = 'Clear all ticks'; }, 3000); return; }
+    state.done = {}; state.units = {}; save(); render(); armed = false; reset.textContent = 'Cleared';
+  });
+  render();
+})();
+</script>
+<script>
+// One 3D player per stage that has a diagram. They share a single canvas, which sits in whichever player is in use.
+document.querySelectorAll('.anim-host').forEach((h) => {
+  h.outerHTML = `<figure class="anim" data-seq="${h.dataset.seq}" aria-label="3D diagram: ${h.dataset.label}">
+    <div class="anim-stage"><div class="anim-status">The 3D diagram loads when you scroll here.</div></div>
+    <div class="anim-bar">
+      <button type="button" class="prev" aria-label="Previous step">◀</button>
+      <button type="button" class="play">▶ Play all</button>
+      <button type="button" class="next" aria-label="Next step">▶</button>
+      <ol class="anim-dots"></ol>
+    </div>
+    <figcaption aria-live="polite"><b class="anim-title"></b><span class="anim-text"></span><span class="kit anim-kit"></span></figcaption>
+  </figure>`;
+});
+// If the 3D module never starts (blocked CDN, old browser), say so instead of waiting forever.
+setTimeout(() => { if (!window.sfAnimReady) document.querySelectorAll('.anim-status').forEach((e) => { e.textContent = 'The 3D library did not load. Check the connection and reload the page.'; }); }, 12000);
+</script>
+<script type="module">
+// jsDelivr's +esm builds import three by full URL, so no import map is needed.
+import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/+esm';
+import { OrbitControls } from 'https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/controls/OrbitControls.js/+esm';
+import { GLTFLoader } from 'https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/loaders/GLTFLoader.js/+esm';
+import { mergeGeometries } from 'https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/utils/BufferGeometryUtils.js/+esm';
+window.sfAnimReady = true;
+
+// Assembly diagrams: the CAD assembly for the chosen size, built one step at a time. Three
+// sequences share one canvas: the drum (stage 2), the unit (stage 3) and the case (stage 5),
+// where every case screw, nut and insert moves into its hole.
+// Positions are CAD coordinates in mm (x: left to right seen from the front, y: front to
+// back, z: bottom to top). Case holes are given on the 10-unit case and shifted for the
+// shorter cases like tools/make_assembly.py does.
+const { CUTS, PITCH_MM, shiftX, windows, TOP } = window.sf;
+const MM = 0.001, PITCH = PITCH_MM * MM;
+const sidesOf = (g) => ['Left', 'Center', 'Right'].map((s) => g + s);
+
+const DRUM_STEPS = [
+  { title: 'Finished drum', text: 'Both halves joined, with the 45 flaps hanging between the two rings. The flaps and the magnet are drawn as simple shapes.', kit: () => [] },
+  { title: '1 · Drum inserts', text: 'FlapDrumOuter standing on its flange, plain end up. An M2 insert goes into the top of each of the two bosses inside, pushed straight down until it is flush.',
+    kit: () => ['2× M2 insert'] },
+  { title: '2 · Magnet', text: 'FlapDrumInner with its hub side up. The magnet goes into the small pocket 20 mm from the centre, marked face out.',
+    kit: () => ['2×1 mm magnet'] },
+  { title: '3 · Push the halves together', text: 'FlapDrumInner goes into the plain end of FlapDrumOuter, hub first, with its two small holes over the inserts. Two positions fit: use the one where the first-flap marks (orange dots here) line up.',
+    kit: () => [] },
+  { title: '4 · Flaps', text: 'Pull the halves a few millimetres apart, slide in a few flaps starting at the mark, press the halves back, and repeat. This does not show which way round the flaps go: flip through the first dozen to check.',
+    kit: () => ['45 flaps'] },
+  { title: '5 · Lock the halves', text: 'Two M2×8 screws through the counterbored holes in FlapDrumInner, into the inserts.',
+    kit: () => ['2× M2×8'] },
+];
+const UNIT_STEPS = [
+  { title: 'Finished unit', text: 'The unit the way it sits in the case: the display side toward you, the PCB plate at the back, the motor wall on the left. The motor, sensor and board are drawn as simple shapes, and the flaps and cables are left out.', kit: () => [] },
+  { title: '1 · Nuts', text: 'The drum side of the PCB plate. An M3 nut goes into the hex pocket of two diagonally opposite corner bosses.',
+    kit: () => ['2× M3 nut'] },
+  { title: '2 · Stepper', text: 'The stepper sits on its two posts on the side wall, shaft pointing away from the wall and cable end toward the small round post. An M4×8 goes through each mounting ear.',
+    kit: () => ['2× M4×8'] },
+  { title: '3 · Hall sensor', text: 'The KY-003 goes on its mount beside the motor, held by two M2×4 screws.',
+    kit: () => ['2× M2×4'] },
+  { title: '4 · PCB', text: 'Seen from the back. The board goes on the four posts on the outside of the PCB plate, parts facing out, with U10 and U6 at the hall sensor end (the top here). An M3×6 goes through two opposite corners.',
+    kit: () => ['2× M3×6'] },
+  { title: '5 · Drum', text: 'The drum’s open end goes over the motor and sensor, and its hub presses onto the motor shaft, flat to flat.',
+    kit: () => [] },
+];
+const CASE_STEPS = [
+  { title: 'Exploded view', text: 'Front to back: front cover, flap units, middle frame, back cover. Each case layer is printed as Left, Center and Right pieces.', kit: () => [] },
+  { title: '1 · Middle frame inserts', text: (n) => `Back of the middle frame facing you. An M3 insert goes into each plain 4 mm hole in the outer rows, above and below windows ${windows([-5, 146, 297, 448], CUTS[n].mf)} (counted from the left as seen from the front).`,
+    kit: () => ['8× M3 insert'] },
+  { title: '2 · Join the middle frame', text: 'The Center piece’s tabs lie over the ends of the Left and Right pieces. An M4 nut drops into each hex pocket from the inside, then an M4×20 goes in from the outer top or bottom edge, through the tab, into the nut.',
+    kit: () => ['4× M4 nut', '4× M4×20'] },
+  { title: '3 · Fit the units', text: 'Each unit sits against the front of the middle frame, PCB through its window. Unit 0 goes in the leftmost window as seen from the front.',
+    kit: () => [] },
+  { title: '4 · Screw the units on', text: 'From the back: an M3×16 through the two holes around each window that have the unit’s nuts behind them (one top, one bottom, diagonally opposite).',
+    kit: (n) => [`${2 * n}× M3×16 (2 per unit)`] },
+  { title: '5 · Front cover inserts', text: 'The front cover from behind, its open back edge facing you. An M3 insert goes into the hole in the top and bottom wall of each piece.',
+    kit: () => ['6× M3 insert'] },
+  { title: '6 · Join the front cover', text: 'Four joints per seam, two near the front face and two near the back edge: an M3 nut into each hex pocket from the inside, then an M3×8 from the outer top or bottom edge through the Center piece.',
+    kit: () => ['8× M3 nut', '8× M3×8'] },
+  { title: '7 · Put the front cover on', text: 'The cover goes over the units until its back edge sits flat against the front of the middle frame, edge to edge. On the bench, lay the cover face down and lower the frame onto it.',
+    kit: () => [] },
+  { title: '8 · Screw the front cover on', text: (n) => `From the back: an M3×16 through each counterbored hole in the outer rows, between windows ${windows([20, 222, 423], CUTS[n].mf)}, top and bottom, into the cover’s inserts.`,
+    kit: () => ['6× M3×16'] },
+  { title: '9 · Join the back cover', text: 'Like the front cover, with one joint per seam in the top and bottom edges: an M3 nut into each pocket from the inside, then an M3×8 from outside. The switch and DC jack fit into the left end.',
+    kit: () => ['4× M3 nut', '4× M3×8'] },
+  { title: '10 · Close the back cover', text: 'Only after every unit passes stage 7. The cover sits on the back of the middle frame; an M3×16 goes through each of its 8 deep counterbores into the middle frame’s inserts.',
+    kit: () => ['8× M3×16'] },
+];
+const DUR = matchMedia('(prefers-reduced-motion: reduce)').matches ? 1 : 3200;
+
+// The players built by the script above, by sequence. `ui` is the one holding the canvas.
+const UI = {};
+document.querySelectorAll('.anim[data-seq]').forEach((fig) => {
+  const q = (s) => fig.querySelector(s);
+  UI[fig.dataset.seq] = { fig, stage: q('.anim-stage'), status: q('.anim-status'), dots: q('.anim-dots'), play: q('.play'),
+    prev: q('.prev'), next: q('.next'), title: q('.anim-title'), text: q('.anim-text'), kit: q('.anim-kit') };
+});
+let seqId = 'case', ui = UI.case;
+
+const MAT = {
+  case: new THREE.MeshStandardMaterial({ color: 0x2b2f33, roughness: 0.75 }),
+  front: new THREE.MeshStandardMaterial({ color: 0x3a4045, roughness: 0.7 }),
+  unit: new THREE.MeshStandardMaterial({ color: 0x8b949a, roughness: 0.6 }),
+  rotor: new THREE.MeshStandardMaterial({ color: 0xf1efe8, roughness: 0.5 }),
+  hi: new THREE.MeshStandardMaterial({ color: 0xe0a800, roughness: 0.55 }),
+  steel: new THREE.MeshStandardMaterial({ color: 0xc4cacf, roughness: 0.35, metalness: 0.6 }),
+  brass: new THREE.MeshStandardMaterial({ color: 0xc9a227, roughness: 0.35, metalness: 0.6 }),
+  hw: new THREE.MeshStandardMaterial({ color: 0xff5a1f, roughness: 0.4, emissive: 0x7a1a00 }),
+  // See-through plastic, so fasteners inside a joint stay visible.
+  ghost: new THREE.MeshStandardMaterial({ color: 0x6b757c, roughness: 0.8, transparent: true, opacity: 0.22, depthWrite: false }),
+  // Stand-ins for the bought parts.
+  motor: new THREE.MeshStandardMaterial({ color: 0xb4bbc1, roughness: 0.4, metalness: 0.5 }),
+  blue: new THREE.MeshStandardMaterial({ color: 0x3f6fb0, roughness: 0.6 }),
+  pcb: new THREE.MeshStandardMaterial({ color: 0x2f7355, roughness: 0.6 }),
+  dark: new THREE.MeshStandardMaterial({ color: 0x1c1f22, roughness: 0.6 }),
+  magnet: new THREE.MeshStandardMaterial({ color: 0xd5d9dc, roughness: 0.25, metalness: 0.8 }),
+};
+const baseMat = (name) => /^FrameFront/.test(name) ? MAT.front
+  : /^(HousingFrame|FrameBack)/.test(name) ? MAT.case : /Rotor/.test(name) ? MAT.rotor : MAT.unit;
+
+// Fastener shapes in mm, built along +Y from the seat point: the head sits below 0, the shank above.
+const cyl = (d, h, at, seg = 20) => new THREE.CylinderGeometry(d / 2, d / 2, h, seg).translate(0, at + h / 2, 0);
+const SHAPES = {
+  m3x16: mergeGeometries([cyl(5.5, 3, -3), cyl(3, 16, 0, 12)]),
+  m3x8: mergeGeometries([cyl(6, 2.4, -2.4), cyl(3, 8, 0, 12)]),
+  m4x20: mergeGeometries([cyl(8, 3.1, -3.1), cyl(4, 20, 0, 12)]),
+  m3nut: new THREE.CylinderGeometry(3.18, 3.18, 2.4, 6),
+  m4nut: new THREE.CylinderGeometry(4.04, 4.04, 3.2, 6),
+  m3ins: cyl(4.6, 5.7, 0, 16),
+  m2ins: cyl(3.4, 4, 0, 16),
+  m2x8: mergeGeometries([cyl(3.8, 1.6, -1.6), cyl(2, 8, 0, 12)]),
+  m2x4: mergeGeometries([cyl(3.8, 1.6, -1.6), cyl(2, 4, 0, 12)]),
+  m4x8: mergeGeometries([cyl(7.5, 3, -3), cyl(4, 8, 0, 12)]),
+  m3x6: mergeGeometries([cyl(5.6, 2.4, -2.4), cyl(3, 6, 0, 12)]),
+  magnet: cyl(2, 1, 0, 16),
+};
+for (const g of Object.values(SHAPES)) g.scale(MM, MM, MM);
+
+// ---- Drum and unit diagrams ----
+// Measured on Frame, BigRotor (FlapDrumOuter) and MiniRotor (FlapDrumInner) in
+// hardware/stl/Assembly_9unit.step; the unit is the same in every size. The drum axis runs
+// along x at y 26.6, z 73; the motor wall is at x -26.8 and the PCB plate at y 84 to 87.
+// The stepper, sensor, board, magnet and flaps are not in the CAD model, so they are
+// simple shapes placed on the real mounting holes.
+const AXIS_Y = 26.6, AXIS_Z = 73.0, FLAP_R = 32.4, MARK_HOLE = 14;
+const V = (a) => new THREE.Vector3(a[0], a[1], a[2]).multiplyScalar(MM);
+const bx = (x0, x1, y0, y1, z0, z1) => new THREE.BoxGeometry(x1 - x0, y1 - y0, z1 - z0).translate((x0 + x1) / 2, (y0 + y1) / 2, (z0 + z1) / 2);
+const cx = (r, x0, x1, y, z) => new THREE.CylinderGeometry(r, r, x1 - x0, 32).rotateZ(Math.PI / 2).translate((x0 + x1) / 2, y, z);
+const solid = (mat, ...geos) => new THREE.Mesh(mergeGeometries(geos).scale(MM, MM, MM), mat);
+const group = (...meshes) => { const g = new THREE.Group(); g.add(...meshes); return g; };
+
+function buildBench(asm, get) {
+  const root = new THREE.Group(), drum = new THREE.Group(), items = {};
+  root.visible = false; asm.add(root); root.add(drum);
+  const add = (key, o, parent = root, hw = false) => {
+    parent.add(o);
+    const meshes = []; o.traverse((m) => { if (m.isMesh) meshes.push([m, m.material]); });
+    return items[key] = { o, home: o.position.clone(), meshes, hw };
+  };
+  // A copy of a CAD part as one mesh, in assembly coordinates.
+  const part = (name) => {
+    const g = new THREE.Group(), o = get(name), c = o.clone(true);
+    root.add(g); o.parent.add(c); g.attach(c); merge(g);
+    return g;
+  };
+  // A screw, nut or insert at its seat point, pointing along its direction of travel.
+  const fast = (key, kind, at, dir, parent = root, mat = MAT.steel) => {
+    const m = new THREE.Mesh(SHAPES[kind], mat);
+    m.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), new THREE.Vector3(...dir));
+    m.position.copy(V(at));
+    return add(key, m, parent, true);
+  };
+  add('frame', part('Frame'));
+  add('outer', part('BigRotor'), drum);
+  add('inner', part('MiniRotor'), drum);
+
+  // Drum: inserts into the two bosses of the outer half, screws through the inner half, magnet in the hub-side pocket.
+  [[22.1, 95.0], [31.1, 51.0]].forEach(([y, z], i) => {
+    fast(`ins${i}`, 'm2ins', [13.4, y, z], [-1, 0, 0], drum, MAT.brass);
+    fast(`scr${i}`, 'm2x8', [19.2, y, z], [-1, 0, 0], drum);
+  });
+  fast('magnet', 'magnet', [5.0, 6.8, 73.0], [1, 0, 0], drum, MAT.magnet);
+  const dot = new THREE.SphereGeometry(1.3 * MM, 16, 12);
+  for (const [key, x] of [['markI', 22.0], ['markO', -22.4]]) {
+    const m = new THREE.Mesh(dot, MAT.hw); m.position.copy(V([x, 37.5, 46.1])); add(key, m, drum);
+  }
+  // Flaps: 39 x 32 x 1 mm plates hinged on the ring of holes, leaning back around the drum. Flap 0 is at the mark.
+  const flapG = new THREE.BoxGeometry(39, 1, 32).translate(-0.2, 0, 16).scale(MM, MM, MM);
+  for (let j = 0; j < 45; j++) {
+    const a = Math.PI + (MARK_HOLE + j) * 2 * Math.PI / 45, m = new THREE.Mesh(flapG, MAT.rotor);
+    m.position.copy(V([0, AXIS_Y + FLAP_R * Math.cos(a), AXIS_Z + FLAP_R * Math.sin(a)]));
+    m.rotation.x = a + 1.1 - Math.PI / 2;
+    add(`flap${j}`, m, drum).rad = [0, Math.cos(a), Math.sin(a)];
+  }
+
+  // Unit: nuts in two diagonal pockets of the PCB plate (the pair the case screws use).
+  fast('nut0', 'm3nut', [-17.3, 82.5, 15], [0, 1, 0]);
+  fast('nut1', 'm3nut', [6.7, 82.5, 119], [0, 1, 0]);
+  // 28BYJ-48: 28 mm can, mounting ears 35 mm apart, shaft 7.8 mm off-centre on the drum axis, cable cap on the far side.
+  add('stepper', group(
+    solid(MAT.motor, cx(13.8, -19.8, -0.8, AXIS_Y, 65.2), bx(-1.8, -0.8, 5.6, 47.6, 61.7, 68.7), cx(4.5, -0.8, 0.7, AXIS_Y, AXIS_Z), cx(2.5, 0.7, 9, AXIS_Y, AXIS_Z)),
+    solid(MAT.blue, bx(-17.8, -0.8, 19.3, 33.9, 48.4, 53))));
+  fast('m4a', 'm4x8', [-0.8, 9.1, 65.2], [-1, 0, 0]);
+  fast('m4b', 'm4x8', [-0.8, 44.1, 65.2], [-1, 0, 0]);
+  add('sensor', group(solid(MAT.pcb, bx(-0.8, 0.8, 28.5, 37.5, 78.6, 97.5)), solid(MAT.dark, bx(0.8, 3.6, 28.6, 30.8, 90, 93))));
+  fast('m2a', 'm2x4', [0.8, 33.0, 82.6], [-1, 0, 0]);
+  fast('m2b', 'm2x4', [0.8, 33.0, 93.5], [-1, 0, 0]);
+  // PCB on the four posts behind the plate, top side out. Board x runs toward -x here, board y downward from z 107.
+  const tall = { U3: 16, 'U1 Nano': 12, SW1: 4 };
+  const onBoard = TOP.filter((p) => p.n).map((p) => bx(14.7 - p.x - p.w, 14.7 - p.x, 92.6, 92.6 + (tall[p.ref] || 7), 107 - p.y - p.h, 107 - p.y));
+  add('pcb', group(solid(MAT.pcb, bx(-25.3, 14.7, 91, 92.6, 27, 107)), solid(MAT.rotor, ...onBoard)));
+  fast('m3a', 'm3x6', [11.7, 92.6, 104], [0, -1, 0]);
+  fast('m3b', 'm3x6', [-22.3, 92.6, 30], [0, -1, 0]);
+  return { root, drum, items };
+}
+
+// Show one bench item at its place plus an offset in mm, highlighted or in its own colours.
+function put(key, vis, off, hi) {
+  const it = model.bench.items[key];
+  it.o.visible = !!vis;
+  if (!vis) return;
+  it.o.position.copy(it.home);
+  if (off) it.o.position.add(V(off));
+  for (const [m, base] of it.meshes) m.material = hi ? (it.hw ? MAT.hw : MAT.hi) : base;
+}
+// Offset of something travelling along dir, `travel` mm away at progress a and home at b.
+const slide = (dir, travel, x, a, b) => dir.map((d) => -d * travel * (1 - span(x, a, b)));
+const pair = (keys, vis, dir, travel, x, moving) => keys.forEach((k, i) =>
+  put(k, vis, moving ? slide(dir, travel, x, 0.55 + 0.12 * i, 0.83 + 0.12 * i) : null, moving));
+function benchOn() {
+  const { mf, fc, bc, units, bench } = model;
+  for (const p of [...mf, ...fc, ...bc, ...units]) p.o.visible = false;
+  bench.root.visible = true;
+}
+// The drum sequence stands the drum on the bench: plain end up, or hub side up for the magnet.
+// It turns about the drum's centre, so the drum stays where the camera looks.
+function standDrum(turn) {
+  const d = model.bench.drum;
+  d.rotation.y = turn;
+  d.position.copy(V([-AXIS_Z * Math.sin(turn), 0, AXIS_Z * (1 - Math.cos(turn))]));
+  d.updateMatrixWorld(true);
+}
+const drumTurn = (s) => s === 2 ? Math.PI / 2 : -Math.PI / 2;
+
+function poseDrum(s, x) {
+  benchOn(); standDrum(drumTurn(s));
+  const b = model.bench, all = s === 0, IN = [-1, 0, 0];
+  for (const k of ['frame', 'nut0', 'nut1', 'stepper', 'm4a', 'm4b', 'sensor', 'm2a', 'm2b', 'pcb', 'm3a', 'm3b']) put(k, false);
+  b.drum.visible = true;
+  // The inner half and what is fixed to it move together.
+  const lift = s === 3 ? slide(IN, 34, x, 0.15, 0.8) : s === 4 ? [6 * (span(x, 0.05, 0.2) - span(x, 0.78, 0.95)), 0, 0] : null;
+  put('outer', s !== 2);
+  [0, 1].forEach((i) => put(`ins${i}`, s !== 2, s === 1 ? slide(IN, 22, x, 0.15 + 0.15 * i, 0.6 + 0.15 * i) : null, s === 1));
+  put('inner', s !== 1, lift, s === 3 && x < 0.85);
+  put('magnet', s !== 1, s === 2 ? slide([1, 0, 0], 14, x, 0.2, 0.75) : lift, s === 2);
+  put('markI', s === 3 || s === 4, lift);
+  put('markO', s === 3 || s === 4);
+  [0, 1].forEach((i) => put(`scr${i}`, all || s === 5, s === 5 ? slide(IN, 22, x, 0.15 + 0.15 * i, 0.6 + 0.15 * i) : null, s === 5));
+  for (let j = 0; j < 45; j++) {
+    const rad = b.items[`flap${j}`].rad, k = s === 4 ? 22 * (1 - span(x, 0.22 + 0.05 * j, 0.4 + 0.05 * j)) : 0;
+    put(`flap${j}`, all || s === 5 || (s === 4 && j < 8), [0, rad[1] * k, rad[2] * k], s === 4);
+  }
+}
+
+function poseUnit(s, x) {
+  benchOn(); standDrum(0);
+  const b = model.bench, from = (st) => s === 0 || s >= st;
+  put('frame', true);
+  [0, 1].forEach((i) => put(`nut${i}`, from(1), s === 1 ? slide([0, 1, 0], 18, x, 0.2 + 0.15 * i, 0.65 + 0.15 * i) : null, s === 1));
+  put('stepper', from(2), s === 2 ? slide([-1, 0, 0], 45, x, 0.08, 0.5) : null, s === 2);
+  pair(['m4a', 'm4b'], from(2), [-1, 0, 0], 25, x, s === 2);
+  put('sensor', from(3), s === 3 ? slide([-1, 0, 0], 30, x, 0.08, 0.5) : null, s === 3);
+  pair(['m2a', 'm2b'], from(3), [-1, 0, 0], 20, x, s === 3);
+  put('pcb', from(4), s === 4 ? slide([0, -1, 0], 40, x, 0.08, 0.5) : null, s === 4);
+  pair(['m3a', 'm3b'], from(4), [0, -1, 0], 22, x, s === 4);
+  b.drum.visible = from(5);
+  if (!b.drum.visible) return;
+  if (s === 5) b.drum.position.copy(V(slide([-1, 0, 0], 70, x, 0.1, 0.8)));
+  const hi = s === 5 && x < 0.85;
+  put('outer', true, null, hi); put('inner', true, null, hi); put('magnet', true);
+  for (const k of ['ins0', 'ins1', 'scr0', 'scr1']) put(k, true);
+  put('markI', false); put('markO', false);
+  for (let j = 0; j < 45; j++) put(`flap${j}`, false);  // left out here: they would hide the frame
+}
+
+// Bench cameras: direction from the target to the camera and the target, both in CAD
+// coordinates (for the drum sequence, in the stood-up drum's own frame), and the distance in m.
+const DRUM_C = [0, AXIS_Y, AXIS_Z];
+const DRUM_VIEWS = [
+  [[0.9, -1, 0.45], DRUM_C, 0.34], [[1, -0.5, 0.3], [8, AXIS_Y, AXIS_Z], 0.24], [[-1, -0.55, 0.3], [10, AXIS_Y, AXIS_Z], 0.22],
+  // Steps 3 and 4 look at the side with the first-flap mark.
+  [[0.7, 0.45, -1], [10, AXIS_Y, AXIS_Z], 0.34], [[0.75, 0.45, -1], [5, AXIS_Y, AXIS_Z], 0.34], [[1, -0.6, 0.35], [15, AXIS_Y, AXIS_Z], 0.26],
+];
+const UNIT_VIEWS = [
+  [[0.9, -1, 0.5], [-2, 40, 67], 0.46], [[0.5, -1, 0.35], [-5, 80, 67], 0.36], [[1, -0.6, 0.4], [-8, 26, 66], 0.32],
+  [[1, -0.5, 0.5], [0, 33, 85], 0.22], [[-0.5, 1, 0.4], [-5, 90, 67], 0.38], [[1, -0.9, 0.45], [5, 30, 70], 0.46],
+];
+const benchView = (views, ref, turn) => (s) => {
+  standDrum(turn(s));
+  const [d, tg, dist] = views[s], o = ref(), target = V(tg);
+  return { target: o.localToWorld(target.clone()), pos: o.localToWorld(target.addScaledVector(new THREE.Vector3(...d).normalize(), dist)) };
+};
+
+// Every case fastener for size n: CAD seat point, travel direction, the step that adds it,
+// and when in that step it moves (fraction of the step).
+function hardware(n) {
+  const C = CUTS[n], out = [];
+  const add = (kind, layer, at, dir, step, win, center = false) => out.push({ kind, layer, at, dir, step, win, center });
+  const NUT = [0.4, 0.62], SCREW = [0.62, 0.92];
+  for (const x of [-5, 146, 297, 448]) for (const z of [5, 129])
+    add('m3ins', 'mf', [shiftX(x, C.mf), 102, z], [0, -1, 0], 1, [0.1, 0.55]);
+  for (const x of [196, 247]) {
+    const X = shiftX(x, C.mf);
+    add('m4nut', 'mf', [X, 95, 20.4], [0, 0, -1], 2, NUT, true);
+    add('m4nut', 'mf', [X, 95, 113.6], [0, 0, 1], 2, NUT, true);
+    add('m4x20', 'mf', [X, 95, 1], [0, 0, 1], 2, SCREW, true);
+    add('m4x20', 'mf', [X, 95, 133], [0, 0, -1], 2, SCREW, true);
+  }
+  for (let i = 0; i < n; i++) {
+    add('m3x16', 'mf', [-17 + PITCH_MM * i, 97, 15], [0, -1, 0], 4, [0.1, 0.5]);
+    add('m3x16', 'mf', [7 + PITCH_MM * i, 97, 119], [0, -1, 0], 4, [0.1, 0.5]);
+  }
+  for (const x of [20, 222, 423]) for (const z of [4, 130])
+    add('m3ins', 'fc', [shiftX(x, C.fc), 87, z], [0, -1, 0], 5, [0.1, 0.55]);
+  for (const x of [188, 256]) for (const y of [9, 81]) {
+    const X = shiftX(x, C.fc);
+    add('m3nut', 'fc', [X, y, 6.4], [0, 0, -1], 6, NUT, true);
+    add('m3nut', 'fc', [X, y, 127.6], [0, 0, 1], 6, NUT, true);
+    add('m3x8', 'fc', [X, y, 0.4], [0, 0, 1], 6, SCREW, true);
+    add('m3x8', 'fc', [X, y, 133.6], [0, 0, -1], 6, SCREW, true);
+  }
+  for (const x of [20, 222, 423]) for (const z of [4, 130])
+    add('m3x16', 'mf', [shiftX(x, C.mf), 97, z], [0, -1, 0], 8, [0.1, 0.55]);
+  for (const x of [188, 256]) {
+    const X = shiftX(x, C.bc);
+    add('m3nut', 'bc', [X, 107, 7.2], [0, 0, -1], 9, NUT, true);
+    add('m3nut', 'bc', [X, 107, 126.8], [0, 0, 1], 9, NUT, true);
+    add('m3x8', 'bc', [X, 107, 0.5], [0, 0, 1], 9, SCREW, true);
+    add('m3x8', 'bc', [X, 107, 133.5], [0, 0, -1], 9, SCREW, true);
+  }
+  for (const x of [-5, 146, 297, 448]) for (const z of [5, 129])
+    add('m3x16', 'bc', [shiftX(x, C.bc), 110, z], [0, -1, 0], 10, [0.5, 0.8]);
+  return out;
+}
+
+let renderer, scene, camera, controls, model = null, n = null, step = 0, t = 1, playing = false, start = 0, timer = 0;
+let camFrom = null, camTo = null, camT = 1;
+const loader = new GLTFLoader();
+const cache = {};
+
+function themeBg() {
+  if (scene) scene.background = new THREE.Color(getComputedStyle(document.documentElement).getPropertyValue('--stage').trim() || '#dfe3e1');
+}
+
+function init() {
+  renderer = new THREE.WebGLRenderer({ antialias: true });
+  renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+  ui.stage.prepend(renderer.domElement);
+  scene = new THREE.Scene(); themeBg();
+  matchMedia('(prefers-color-scheme: dark)').addEventListener('change', themeBg);
+  new MutationObserver(themeBg).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+  camera = new THREE.PerspectiveCamera(30, 16 / 9, 0.005, 50);
+  controls = new OrbitControls(camera, renderer.domElement);
+  controls.enableDamping = true;
+  controls.addEventListener('start', () => { camT = 1; });
+  scene.add(new THREE.HemisphereLight(0xffffff, 0x777777, 1.6));
+  const sun = new THREE.DirectionalLight(0xffffff, 1.6); sun.position.set(0.6, 1.0, 1.2); scene.add(sun);
+  const fill = new THREE.DirectionalLight(0xffffff, 0.9); fill.position.set(-0.6, 0.5, -1.2); scene.add(fill);
+  sizer = new ResizeObserver(resize); sizer.observe(ui.stage); resize();
+  renderer.domElement.addEventListener('webglcontextlost', (e) => {
+    e.preventDefault(); fail('The browser dropped the 3D graphics context. Reload the page.');
+  });
+  // Some embedded frames pause requestAnimationFrame; fall back to a timer so the diagram still draws.
+  renderer.setAnimationLoop((now) => { lastFrame = performance.now(); frame(now); });
+  setInterval(() => { if (performance.now() - lastFrame > 400) frame(performance.now()); }, 33);
+}
+
+let sizer = null;
+function resize() {
+  const w = ui.stage.clientWidth, h = ui.stage.clientHeight;
+  if (!w || !h) return;
+  renderer.setSize(w, h, false); camera.aspect = w / h; camera.updateProjectionMatrix();
+}
+let lastFrame = 0, failed = false;
+function fail(msg) {
+  failed = true; ui.status.hidden = false; ui.status.textContent = msg;
+}
+function frame(now) {
+  if (failed) return;
+  try { tick(now); } catch (e) { fail(`3D error: ${e?.message || e}`); return; }
+  // If a loaded model draws nothing, show why instead of a blank box.
+  if (model && !checked && now - loadedAt > 2000) {
+    checked = true;
+    const tris = renderer.info.render.triangles, c = renderer.domElement;
+    if (!tris) fail(`The model loaded but nothing was drawn (canvas ${c.width}×${c.height}, `
+      + `model ${model.size.toArray().map((v) => v.toFixed(2)).join('×')} m, ${renderer.capabilities.isWebGL2 ? 'WebGL2' : 'WebGL1'}).`);
+  }
+}
+let checked = false, loadedAt = 0;
+
+// Build the scene graph for one size: case pieces by name, the modelled unit copied into
+// every window, and the case fasteners attached to the pieces they belong to.
+function prepare(gltf, units) {
+  const root = gltf.scene;
+  root.updateMatrixWorld(true);
+  const get = (name) => root.getObjectByName(name);
+  const meshesOf = (o) => { const a = []; o.traverse((m) => { if (m.isMesh) a.push(m); }); return a; };
+  for (const m of meshesOf(root)) m.material = baseMat(m.name || m.parent?.name || '');
+  const all = new THREE.Box3().setFromObject(root);
+  const center = all.getCenter(new THREE.Vector3()), size = all.getSize(new THREE.Vector3());
+  const frontC = new THREE.Box3().setFromObject(get('FrameFront')).getCenter(new THREE.Vector3());
+  const midC = new THREE.Box3().setFromObject(get('HousingFrame')).getCenter(new THREE.Vector3());
+  const front = Math.sign(frontC.z - midC.z) || 1;  // display face direction along z
+
+  // Separate copies of the unit's parts for the drum and unit diagrams.
+  const bench = buildBench(get('HousingFrame').parent, get);
+  // Unit: frame + both drum halves, merged into one mesh per material, then cloned into each window.
+  const unit = new THREE.Group();
+  root.add(unit);
+  for (const name of ['Frame', 'BigRotor', 'MiniRotor']) { const o = get(name); if (o) unit.attach(o); }
+  merge(unit);
+  const uC = new THREE.Box3().setFromObject(unit).getCenter(new THREE.Vector3());
+  const dir = uC.x < center.x ? 1 : -1;
+  const list = [unit];
+  for (let i = 1; i < units; i++) {
+    const c = unit.clone(true); c.position.x += dir * PITCH * i; root.add(c); list.push(c);
+  }
+  root.updateMatrixWorld(true);
+  // Offsets are given in world space; toLocal maps them into each part's parent frame (the glTF root is rotated).
+  const piece = (o, meshes = merge(o)) => ({ o, home: o.position.clone(), meshes: meshes.map((m) => [m, m.material]),
+    toLocal: new THREE.Matrix3().setFromMatrix4(o.parent.matrixWorld).invert() });
+  const layer = (g) => sidesOf(g).map(get).filter(Boolean).map((o) => piece(o));
+  const m = {
+    root, center, size, front, bench,
+    mf: layer('HousingFrame'), fc: layer('FrameFront'), bc: layer('FrameBack'),
+    units: list.map((u) => piece(u, meshesOf(u))),  // already merged
+  };
+  root.updateMatrixWorld(true);
+  // CAD point (mm) to world space. CAD coordinates live in the assembly node (the scene's rotated child).
+  const asm = get('HousingFrame').parent;
+  m.cad = (x, y, z) => asm.localToWorld(new THREE.Vector3(x * MM, y * MM, z * MM));
+  m.joints = { mf: shiftX(196, CUTS[units].mf), fc: shiftX(188, CUTS[units].fc), bc: shiftX(188, CUTS[units].bc) };
+
+  // Fasteners hang off the case piece they go into, so they move with it.
+  const boxes = {};
+  for (const g of ['mf', 'fc', 'bc']) boxes[g] = m[g].map((p) => new THREE.Box3().setFromObject(p.o));
+  m.hw = hardware(units).map((h, i, arr) => {
+    const w = m.cad(...h.at);
+    let k = 1;
+    if (!h.center) {
+      // The piece whose span holds the point, preferring the one it is furthest inside.
+      const room = boxes[h.layer].map((b) => Math.min(w.x - b.min.x, b.max.x - w.x));
+      k = room.indexOf(Math.max(...room));
+    }
+    const host = m[h.layer][k].o;
+    const travel = h.kind.startsWith('m3ins') ? 24 : h.kind.endsWith('nut') ? 18 : 30;
+    const from = m.cad(h.at[0] - h.dir[0] * travel, h.at[1] - h.dir[1] * travel, h.at[2] - h.dir[2] * travel);
+    const seat = host.worldToLocal(w.clone()), startL = host.worldToLocal(from);
+    const mesh = new THREE.Mesh(SHAPES[h.kind], h.kind === 'm3ins' ? MAT.brass : MAT.steel);
+    mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), seat.clone().sub(startL).normalize());
+    mesh.visible = false;
+    host.add(mesh);
+    // Items of one step go in one after another, left to right.
+    const same = arr.filter((o) => o.step === h.step && o.kind === h.kind);
+    const lag = same.length > 1 ? 0.25 * same.indexOf(h) / (same.length - 1) : 0;
+    return { ...h, mesh, seat, startL, lag };
+  });
+  return m;
+}
+
+// The CAD export has hundreds of meshes per part; merge each part into one mesh per material.
+function merge(o) {
+  o.updateMatrixWorld(true);
+  const inv = o.matrixWorld.clone().invert(), byMat = new Map();
+  o.traverse((m) => {
+    if (!m.isMesh) return;
+    let g = m.geometry.clone().applyMatrix4(inv.clone().multiply(m.matrixWorld));
+    for (const k of Object.keys(g.attributes)) if (k !== 'position' && k !== 'normal') g.deleteAttribute(k);
+    if (g.index) g = g.toNonIndexed();
+    const mat = m.material;
+    (byMat.get(mat) || byMat.set(mat, []).get(mat)).push(g);
+  });
+  o.clear();
+  const out = [];
+  for (const [mat, gs] of byMat) {
+    const mesh = new THREE.Mesh(mergeGeometries(gs), mat);
+    o.add(mesh); out.push(mesh);
+  }
+  return out;
+}
+
+const ease = (x) => x <= 0 ? 0 : x >= 1 ? 1 : x * x * (3 - 2 * x);
+const span = (x, a, b) => ease((x - a) / (b - a));
+
+function place(p, dx, dz, visible, hi, ghost = false) {
+  p.o.visible = visible;
+  p.o.position.copy(p.home).add(new THREE.Vector3(dx, 0, dz).applyMatrix3(p.toLocal));
+  for (const [m, base] of p.meshes) m.material = hi ? MAT.hi : ghost ? MAT.ghost : base;
+}
+
+// Which layers each step shows.
+const SHOW = {
+  mf: [0, 1, 2, 3, 4, 7, 8, 10],
+  units: [0, 3, 4, 7, 8, 10],
+  fc: [0, 5, 6, 7, 8, 10],
+  bc: [0, 9, 10],
+};
+
+// Pose every part for step s at progress x (0 = start of its animation, 1 = done).
+function poseCase(s, x) {
+  model.bench.root.visible = false;
+  const { size, front, mf, fc, bc, units } = model;
+  const D = size.z, G = size.x * 0.08;
+  // k: 0 = pieces apart, 1 = joined.
+  const layerAt = (pieces, k, dz, vis, hi, ghost) => pieces.forEach((p, i) =>
+    place(p, (i - (pieces.length - 1) / 2) * G * (1 - k), dz, vis, hi, ghost));
+  // Joint steps turn see-through once the pieces meet, so the nuts and screws show.
+  const see = (at) => s === at && x > 0.38;
+  const joinK = (at) => s < at ? 0 : s === at ? span(x, 0.05, 0.35) : 1;
+  if (s === 0) {
+    const e = ease(x);
+    layerAt(mf, 1, 0, true, false);
+    layerAt(fc, 1, front * D * 2.6 * e, true, false);
+    layerAt(bc, 1, -front * D * 1.2 * e, true, false);
+    units.forEach((p) => place(p, 0, front * D * 0.9 * e, true, false));
+  } else {
+    layerAt(mf, joinK(2), 0, SHOW.mf.includes(s), false, see(2));
+    units.forEach((p, i) => {
+      const lag = 0.45 * i / units.length;
+      const k = s === 3 ? span(x, 0.05 + lag, 0.5 + lag) : 1;
+      place(p, 0, front * D * 1.1 * (1 - k), SHOW.units.includes(s), s === 3);
+    });
+    layerAt(fc, joinK(6), s === 7 ? front * D * 1.4 * (1 - span(x, 0.1, 0.85)) : 0, SHOW.fc.includes(s), s === 7, see(6));
+    layerAt(bc, joinK(9), s === 10 ? -front * D * 1.4 * (1 - span(x, 0.05, 0.4)) : 0, SHOW.bc.includes(s), s === 10 && x < 0.42, see(9) || see(10));
+  }
+  for (const h of model.hw) {
+    h.mesh.visible = s > 0 && s >= h.step;
+    const k = s === h.step ? span(x, h.win[0] + h.lag, h.win[1] + h.lag) : 1;
+    h.mesh.position.lerpVectors(h.startL, h.seat, k);
+    h.mesh.material = s === h.step ? MAT.hw : h.kind === 'm3ins' ? MAT.brass : MAT.steel;
+  }
+}
+
+// Camera for each step: a direction in world space (x right, y up, z toward the front),
+// what to look at, and how far away.
+function viewCase(s) {
+  const { center, size, front, cad, joints } = model;
+  const W = Math.max(size.x, size.y);
+  const back = -front;
+  const views = {
+    0: [[-1.1, 0.9, front * 0.5], center.clone().add(new THREE.Vector3(0, 0, front * size.z * 0.7)), W * 2.6],
+    1: [[0.3, 0.55, back], center, W * 1.75],
+    2: [[-0.9, 0.3, back * 0.7], cad(joints.mf, 95, 67), 0.36],
+    3: [[-0.7, 0.45, front], center, W * 1.9],
+    4: [[0.35, 0.4, back], cad(50, 95, 67), 0.5],
+    5: [[0.3, 0.6, back], cad(0, 60, 67).setX(center.x), W * 1.75],
+    6: [[-0.9, 0.35, back * 0.6], cad(joints.fc, 45, 67), 0.38],
+    7: [[-0.75, 0.5, front], center, W * 1.9],
+    8: [[0.3, 0.45, back], center, W * 1.6],
+    9: [[-0.9, 0.35, front * 0.6], cad(joints.bc, 110, 67), 0.36],
+    10: [[0.75, 0.45, back], center, W * 1.9],
+  };
+  const [v, target, d] = views[s];
+  return { pos: target.clone().addScaledVector(new THREE.Vector3(...v).normalize(), d), target: target.clone() };
+}
+
+const SEQ = {
+  drum: { steps: DRUM_STEPS, pose: poseDrum, view: benchView(DRUM_VIEWS, () => model.bench.drum, drumTurn), step: 0 },
+  unit: { steps: UNIT_STEPS, pose: poseUnit, view: benchView(UNIT_VIEWS, () => model.bench.root, () => 0), step: 0 },
+  case: { steps: CASE_STEPS, pose: poseCase, view: viewCase, step: 0 },
+};
+function pose(s, x) { if (model) SEQ[seqId].pose(s, x); }
+
+function moveCamera(s, instant) {
+  const to = SEQ[seqId].view(s);
+  if (instant) { camera.position.copy(to.pos); controls.target.copy(to.target); controls.update(); camT = 1; return; }
+  camFrom = { pos: camera.position.clone(), target: controls.target.clone() }; camTo = to; camT = 0;
+}
+
+function caption(id = seqId) {
+  const u = UI[id], at = id === seqId ? step : SEQ[id].step, st = SEQ[id].steps[at];
+  u.title.textContent = st.title;
+  u.text.textContent = typeof st.text === 'function' ? st.text(n) : st.text;
+  u.kit.innerHTML = st.kit(n).map((k) => `<span>${k}</span>`).join('');
+  u.dots.querySelectorAll('button').forEach((b, i) => {
+    if (i === at) b.setAttribute('aria-current', 'step'); else b.removeAttribute('aria-current');
+  });
+}
+
+function go(s, { cam = true } = {}) {
+  clearTimeout(timer);
+  step = Math.max(0, Math.min(SEQ[seqId].steps.length - 1, s));
+  t = 0; start = performance.now();
+  caption();
+  if (model && cam) moveCamera(step, false);
+}
+
+let last = performance.now();
+function tick(now) {
+  const dt = now - last; last = now;
+  if (model && t < 1) {
+    t = Math.min(1, (now - start) / DUR);
+    pose(step, t);
+    if (t === 1 && playing) {
+      if (step < SEQ[seqId].steps.length - 1) timer = setTimeout(() => { if (playing) go(step + 1); }, 900);
+      else stopPlay();
+    }
+  }
+  if (camT < 1) {
+    camT = Math.min(1, camT + dt / 1100);
+    const k = ease(camT);
+    camera.position.lerpVectors(camFrom.pos, camTo.pos, k);
+    controls.target.lerpVectors(camFrom.target, camTo.target, k);
+  }
+  controls.update();
+  renderer.render(scene, camera);
+}
+
+function stopPlay() { playing = false; clearTimeout(timer); ui.play.textContent = '▶ Play all'; }
+
+// Move the canvas into another stage's player and show that sequence where it was left.
+function activate(id) {
+  if (id === seqId) return;
+  stopPlay();
+  SEQ[seqId].step = step;
+  ui.status.hidden = false; ui.status.textContent = IDLE;
+  seqId = id; ui = UI[id]; step = SEQ[id].step; t = 1;
+  ui.status.hidden = !!model;
+  if (!renderer) return;
+  ui.stage.prepend(renderer.domElement);
+  sizer.disconnect(); sizer.observe(ui.stage); resize();
+  if (model) { pose(step, 1); moveCamera(step, true); }
+}
+const IDLE = 'Click here, or any button below, to show this diagram.';
+
+async function show(size) {
+  n = size;
+  for (const id in UI) caption(id);
+  if (!renderer) return;
+  ui.status.hidden = false; ui.status.textContent = 'Loading the 3D model…';
+  try {
+    if (!cache[size]) cache[size] = new Promise((res, rej) => loader.load(`models/split-flap-${size}.json`, res, undefined, rej));
+    const gltf = await cache[size];
+    if (size !== n) return;
+    if (model) scene.remove(model.root);
+    // Each size is prepared once; switching back reuses the same objects.
+    gltf.prepared ||= prepare(gltf, size);
+    model = gltf.prepared; scene.add(model.root);
+    loadedAt = performance.now();
+    if (t < 1) start = performance.now();  // a step chosen while loading plays from its start
+    pose(step, t); moveCamera(step, true);
+    ui.status.hidden = true;
+  } catch (e) {
+    cache[size] = null;
+    ui.status.textContent = `Could not load models/split-flap-${size}.json (${e?.message || e}). `
+      + 'Open the guide with python tools/serve_guide.py, and run python tools/make_guide_models.py if the models are missing.';
+  }
+}
+
+// Load on first scroll into view, or on the first click of any control, whichever comes first.
+let started = false;
+function ensureStarted(id = seqId) {
+  if (started) return activate(id);
+  started = true;
+  seqId = id; ui = UI[id]; step = SEQ[id].step;
+  for (const k in UI) if (k !== id) UI[k].status.textContent = IDLE;
+  try { init(); } catch (e) { ui.status.textContent = `3D is not available in this browser (${e.message}).`; return; }
+  show(n);
+}
+
+for (const [id, u] of Object.entries(UI)) {
+  SEQ[id].steps.forEach((st, i) => {
+    const li = document.createElement('li'), b = document.createElement('button');
+    b.type = 'button'; b.textContent = i === 0 ? 'All' : String(i); b.title = st.title;
+    b.addEventListener('click', () => { ensureStarted(id); stopPlay(); go(i); });
+    li.append(b); u.dots.append(li);
+  });
+  u.prev.addEventListener('click', () => { ensureStarted(id); stopPlay(); go(step - 1); });
+  u.next.addEventListener('click', () => { ensureStarted(id); stopPlay(); go(step + 1); });
+  u.play.addEventListener('click', () => {
+    ensureStarted(id);
+    if (playing) return stopPlay();
+    playing = true; u.play.textContent = '❚❚ Pause';
+    go(step === 0 || step === SEQ[id].steps.length - 1 ? 1 : step);
+  });
+  u.stage.addEventListener('click', () => { if (id !== seqId || !started) ensureStarted(id); });
+}
+// "3D" buttons in the checklists jump their stage's diagram to that step.
+document.querySelectorAll('.go3d[data-anim]').forEach((b) => b.addEventListener('click', () => {
+  const id = b.dataset.seq || 'case';
+  UI[id].fig.scrollIntoView({ behavior: DUR === 1 ? 'auto' : 'smooth', block: 'start' });
+  ensureStarted(id); stopPlay(); go(+b.dataset.anim);
+}));
+document.addEventListener('sf-size', (e) => { if (e.detail !== n) show(e.detail); });
+
+n = +(document.querySelector('.sizes button[aria-pressed="true"]')?.dataset.n || 9);
+for (const id in UI) { caption(id); UI[id].status.textContent = 'Press Play, or scroll here, to load the 3D diagram.'; }
+// Start with whichever player first comes near the viewport. After that the canvas follows
+// the player that fills most of the view, unless a sequence is playing.
+const near = new IntersectionObserver((entries) => {
+  const e = entries.find((x) => x.isIntersecting);
+  if (!e || started) return;
+  near.disconnect();
+  ensureStarted(e.target.closest('.anim').dataset.seq); go(0, { cam: false });
+}, { rootMargin: '400px' });
+const inView = new IntersectionObserver((entries) => {
+  for (const e of entries) {
+    const id = e.target.closest('.anim').dataset.seq;
+    if (e.intersectionRatio >= 0.6 && started && !playing && id !== seqId) activate(id);
+  }
+}, { threshold: 0.6 });
+for (const u of Object.values(UI)) { near.observe(u.stage); inView.observe(u.stage); }
+</script>
