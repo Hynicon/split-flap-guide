@@ -51,6 +51,8 @@ p { margin: 0; max-width: 68ch; }
 .steps label::before { content: counter(s) ". "; font: 500 13px var(--mono); color: var(--muted); }
 .steps li.done label { color: var(--done); }
 .steps li.done label::before { color: var(--done); }
+.steps .where { grid-column: 2; min-width: 0; }
+.steps .where p { margin: 8px 0 0; }
 .steps .note { grid-column: 2; font-size: 14px; color: var(--muted); }
 .kit { grid-column: 2; display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
 .kit span { font: 500 12px var(--mono); padding: 2px 7px; border-radius: 4px; border: 1px solid var(--line); background: var(--bg); white-space: nowrap; }
@@ -182,7 +184,7 @@ dialog.zoom img { display: block; max-width: 96vw; max-height: 92vh; background:
 <main class="wrap">
   <header>
     <h1>Split-flap build guide</h1>
-    <p class="lede">From printed parts and bare PCBs to a working display. It follows David Königsmann's original instructions (Printables 69464) and his photos, changed for this build: shortened case, hand-soldered boards, and an ESP32 in place of the ESP-01. Hole positions and screw paths come from the CAD model. Pick your size at the top and every quantity updates. Ticks are saved in this browser, and <b>Next step</b> in the top bar jumps to the first step you haven't ticked. Steps with a <span class="go3d" style="cursor:default">3D</span> button show that step in the stage's 3D diagram. Click any photo to enlarge it.</p>
+    <p class="lede">From printed parts and bare PCBs to a working display. It follows David Königsmann's original instructions (Printables 69464) and his photos, changed for this build: shortened case, hand-soldered boards, and an ESP32 in place of the ESP-01. Hole positions and screw paths come from the CAD model. Pick your size at the top and every quantity updates. Ticks are saved in this browser, and <b>Next step</b> in the top bar jumps to the first step you haven't ticked. Steps with a <span class="go3d" style="cursor:default">3D</span> button show that step in the stage's 3D diagram. Click any photo to enlarge it. The firmware, the phone app and the remote server are in the <a href="https://github.com/Hynicon/split-flap">split-flap repository</a>.</p>
     <nav aria-label="Stages"><ol>
       <li><a href="#parts">Parts</a></li><li><a href="#pcb">1 PCBs</a></li><li><a href="#drum">2 Drums</a></li>
       <li><a href="#unit">3 Units</a></li><li><a href="#first">4 First unit test</a></li><li><a href="#case">5 Case</a></li>
@@ -362,7 +364,7 @@ dialog.zoom img { display: block; max-width: 96vw; max-height: 92vh; background:
 
   <section id="first">
     <div class="stage-h"><h2>4 · First unit test</h2><span>one unit, before building the rest</span></div>
-    <p>On the PC, in a terminal opened in this repo's folder (the one with <code>platformio.ini</code>), with the Nano on USB and the unit on 12 V through the power lead in U8. Stop <code>pio device monitor</code> with Ctrl+C before each upload, because it holds the port.</p>
+    <p>On the PC, in a terminal opened in a copy of the <a href="https://github.com/Hynicon/split-flap">split-flap repository</a> (the folder with <code>platformio.ini</code>), with the Nano on USB and the unit on 12 V through the power lead in U8. Stop <code>pio device monitor</code> with Ctrl+C before each upload, because it holds the port.</p>
     <ol class="steps" data-stage="first">
       <li><input type="checkbox" id="ft1"><label for="ft1">Flash the offset tool: <code>pio run -e offset_tool -t upload</code>, then <code>pio device monitor</code>. Type an offset (start with <code>100</code>) and press Enter.</label>
         <div class="note">If the upload fails with a sync error, the Nano has the newer bootloader: change <code>board</code> to <code>nanoatmega328new</code> in the <code>unit</code> and <code>offset_tool</code> sections of <code>platformio.ini</code>.</div></li>
@@ -431,7 +433,7 @@ dialog.zoom img { display: block; max-width: 96vw; max-height: 92vh; background:
   </section>
 
   <section id="esp">
-    <div class="stage-h"><h2>6 · Power and ESP32</h2><span>Option B in <code>hardware/wiring.md</code></span></div>
+    <div class="stage-h"><h2>6 · Power and ESP32</h2><span>Option B in <a href="https://github.com/Hynicon/split-flap/blob/main/hardware/wiring.md"><code>hardware/wiring.md</code></a></span></div>
     <div class="warn"><b>3.3 V only</b>The ESP32 is not 5 V tolerant. Never connect SDA/SCL straight to the bus. Set the buck converter to 5.0 V <i>before</i> connecting anything to it.</div>
     <figure class="wire"><div class="wire-scroll" id="wiring"></div><figcaption>Every connection for Option B. Dots are joints. Lines that cross without a dot are not connected. On a narrow screen, scroll the drawing sideways.</figcaption></figure>
     <details><summary>The same wiring as text</summary>
@@ -456,10 +458,21 @@ Signals
     <ol class="steps" data-stage="esp">
       <li><input type="checkbox" id="es1"><label for="es1">Set the buck converter to 5.0 V: feed its IN+ and IN− with 12 V, measure OUT+ to OUT−, and turn the trimmer. Nothing else is connected to its output yet.</label></li>
       <li><input type="checkbox" id="es2"><label for="es2">Wire as above with 22 AWG wire for everything carrying 12 V or 5 V. Cut the power lead's 12V wire and put the rocker switch in it. Use the wire tags you made in stage 1, not cable colours, and insulate every joint.</label></li>
-      <li><input type="checkbox" id="es6"><label for="es6">Stick the ESP32, buck converter and level shifter inside the left piece of the back cover with double-sided foam tape, clear of the keyhole and the screw bosses. Leave the ESP32's USB port reachable. The wires must let the cover lie open beside the case. The cover is 23 mm deep.</label></li>
+      <li><input type="checkbox" id="es6"><label for="es6"><b>Mount the boards in the back cover.</b> Use the piece with the switch and jack holes in its end. Lay it inside-up with that end on your left and the keyhole slot near the top. All three boards go in a row along the lower part of the floor, stuck down with double-sided foam tape. Distances are measured from the inside of the end wall and the bottom wall.</label>
+        <div class="where"><div class="tbl"><table>
+          <thead><tr><th>Board</th><th>From the end wall</th><th>Up from the bottom wall</th></tr></thead>
+          <tbody>
+            <tr><td>Buck converter, with the 1000 µF capacitor lying on its side next to it</td><td>25–70 mm</td><td>15–45 mm</td></tr>
+            <tr><td>Level shifter</td><td>75–90 mm</td><td>15–40 mm</td></tr>
+            <tr><td>ESP32, standing lengthwise with its USB port pointing up</td><td>95–125 mm</td><td>15–70 mm</td></tr>
+          </tbody>
+        </table></div>
+        <p>Leave three areas clear: the first 25 mm from the end wall, where the switch and jack bodies stick in; the bottom 12 mm, where the screw bosses are; and everything above 85 mm, where a wall screw comes through the keyhole.</p>
+        <p>Keep everything under 18 mm tall: the tray is 20 mm deep inside, and its rim sits against the middle frame. If the ESP32 has pins pointing down, stand it on a stack of foam tape as tall as the pins. On a 7-unit case this piece is 50 mm shorter: put the level shifter above the buck converter (50–65 mm up) and the ESP32 at 75–105 mm from the end wall. Leave enough slack in the wires for the cover to lie open beside the case.</p></div></li>
       <li><input type="checkbox" id="es3"><label for="es3">Flash the master: <code>pio run -e master -t upload</code>, then <code>pio run -e master -t uploadfs</code>.</label></li>
             <li><input type="checkbox" id="es5"><label for="es5">Serial monitor at 115200: it prints <code>[bus] scan: 1/9 units answered: 0x10=ok …</code> with just unit 0 connected, and the rest <code>MISSING</code>. Type text; it should appear on the flap.</label></li>
-      <li><input type="checkbox" id="es4"><label for="es4">Connect it to Wi-Fi: follow <b>First-time setup</b> in <code>README.md</code>. If you built anything other than 9 units, set <b>units = <span class="N">9</span></b> on its Settings page, because the firmware's default is 9.</label></li>
+      <li><input type="checkbox" id="es4"><label for="es4">Connect it to Wi-Fi: follow <a href="https://github.com/Hynicon/split-flap#first-time-setup"><b>First-time setup</b></a> in the README. If you built anything other than 9 units, set <b>units = <span class="N">9</span></b> on its Settings page, because the firmware's default is 9.</label></li>
+      <li><input type="checkbox" id="es7"><label for="es7"><b>Optional: control it from anywhere.</b> If the display will run on a network you can't reach, such as a phone hotspot, set up the relay server and point the display at it: see <a href="https://github.com/Hynicon/split-flap#remote-app-use-it-from-anywhere"><b>Remote app</b></a> in the README. It covers Docker, Portainer and adding the app to a phone's home screen.</label></li>
     </ol>
   </section>
 
@@ -492,7 +505,7 @@ Signals
         <tr><td>No unit answers the scan</td><td>SDA and SCL are swapped, a GND is missing, or the level shifter is wired wrong. Compare every wire with the drawing in <a href="#esp">stage 6</a>.</td></tr>
         <tr><td>Units stutter or restart when they all move</td><td>The 12 V rail is sagging: each 7805 needs at least 7 V in. Use a 12 V supply of 3 A or more, fit the 1000 µF capacitor, and keep the power wires short (<a href="#al2">stage 7, step 2</a>).</td></tr>
         <tr><td>The web page is blank or shows 404</td><td>The filesystem wasn't uploaded: <code>pio run -e master -t uploadfs</code> (<a href="#es3">stage 6, step 4</a>).</td></tr>
-        <tr><td>Wi-Fi, accounts, tokens or wrong counts</td><td>See <b>Troubleshooting</b> in <code>README.md</code>.</td></tr>
+        <tr><td>Wi-Fi, accounts, tokens or wrong counts</td><td>See <a href="https://github.com/Hynicon/split-flap#troubleshooting"><b>Troubleshooting</b></a> in the README.</td></tr>
       </tbody>
     </table></div>
   </section>

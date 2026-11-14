@@ -4,6 +4,8 @@ A step-by-step build guide for a split-flap display, with 3D assembly diagrams, 
 
 Open it here: https://hynicon.github.io/split-flap-guide/
 
+The firmware, the phone app and the remote relay server (Docker, Portainer) are in [Hynicon/split-flap](https://github.com/Hynicon/split-flap).
+
 ## Credits
 
 The display design, the case and unit geometry shown in the 3D diagrams, and the photos are by David Königsmann
