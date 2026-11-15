@@ -1,5 +1,8 @@
 # Split-flap build guide
 
+> [!WARNING]
+> **Work in progress.** This guide is for testing and is not complete. The build has not yet been tested end to end on a finished display, and steps may change. Build it at your own risk.
+
 A step-by-step build guide for a split-flap display, with 3D assembly diagrams, wiring drawings and a progress checklist.
 
 Open it here: https://hynicon.github.io/split-flap-guide/
