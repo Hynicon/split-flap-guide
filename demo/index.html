@@ -1,0 +1,336 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="description" content="Try the split-flap display's phone app with a virtual display.">
+  <title>Split-Flap</title>
+  <meta name="theme-color" content="#16181a">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Split-Flap">
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="icon-180.png">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="board">
+    <div class="board-top">
+      <h1>Split-Flap</h1>
+      <span id="link" class="link" role="status">Connecting…</span>
+    </div>
+    <div id="frame" class="flaps" role="img" aria-label="Current display"></div>
+    <p id="frame-note" class="board-note"></p>
+  </header>
+
+  <main>
+    <p id="notice" class="notice" hidden></p>
+
+    <!-- Now: what is on the display, and the quick ways to change it -->
+    <section id="tab-now" aria-labelledby="h-now">
+      <h2 id="h-now">Show</h2>
+      <div id="modes" class="modes" role="group" aria-label="What the display shows"></div>
+      <div id="single-row" class="field" hidden>
+        <label for="single">Platform</label>
+        <select id="single">
+          <option value="tiktok">TikTok</option>
+          <option value="instagram">Instagram</option>
+          <option value="facebook">Facebook</option>
+        </select>
+      </div>
+
+      <h2>Message</h2>
+      <form id="message-form" class="card">
+        <label for="message">Text to show</label>
+        <div class="inline">
+          <input id="message" maxlength="64" autocomplete="off" autocapitalize="characters" enterkeyhint="send" placeholder="OPEN TIL 9">
+          <button type="submit">Show</button>
+        </div>
+        <p id="message-hint" class="hint"></p>
+      </form>
+
+      <h2>Saved messages</h2>
+      <div class="card">
+        <div id="presets" class="chips"></div>
+        <p id="presets-empty" class="hint">None yet. Type a message above, then save it here to show it again with one tap.</p>
+        <div class="row">
+          <button type="button" id="preset-save" class="quiet">Save the message above</button>
+          <button type="button" id="preset-edit" class="quiet" aria-pressed="false">Remove…</button>
+        </div>
+      </div>
+
+      <h2>Countdown</h2>
+      <form id="countdown-form" class="card">
+        <label>Label <input name="label" maxlength="32" autocomplete="off" autocapitalize="characters" placeholder="CLOSE"></label>
+        <div class="field">
+          <label for="cd-repeat">Counts down to</label>
+          <select id="cd-repeat" name="repeat"><option value="daily">A time, every day</option><option value="once">A date and time</option></select>
+        </div>
+        <label data-cd="daily">Time <input name="time" type="time"></label>
+        <label data-cd="once" hidden>Date and time <input name="when" type="datetime-local"></label>
+        <label data-cd="once" hidden>When it's over, show <input name="done" maxlength="64" autocomplete="off" autocapitalize="characters" placeholder="NOW OPEN"></label>
+        <p id="countdown-hint" class="hint">Shows the label and the time left, such as CLOSE 25M or XMAS 12D. Choose Countdown above, or add it to the Mix.</p>
+        <div class="row">
+          <button type="submit">Save</button>
+          <button type="button" id="countdown-go" class="quiet">Show the countdown now</button>
+        </div>
+      </form>
+    </section>
+
+    <!-- Words: the randomizer's list -->
+    <section id="tab-words" aria-labelledby="h-words" hidden>
+      <h2 id="h-words">Random words</h2>
+      <div class="card">
+        <p class="hint">The display picks from this list at random and shows every word once before repeating any. Changes take effect straight away.</p>
+        <form id="word-form" class="inline">
+          <label for="word" class="sr">New word</label>
+          <input id="word" maxlength="32" autocomplete="off" autocapitalize="characters" enterkeyhint="done" placeholder="Add a word">
+          <button type="submit">Add</button>
+        </form>
+        <p id="word-hint" class="hint"></p>
+        <ul id="words" class="list"></ul>
+        <p id="words-count" class="hint"></p>
+      </div>
+      <div class="card">
+        <div class="field">
+          <label for="random_seconds">Change word every</label>
+          <span class="unit"><input id="random_seconds" type="number" inputmode="numeric" min="20" max="3600" data-cfg="random_seconds"> seconds</span>
+        </div>
+        <p class="hint">20 seconds at the least, so the motors can rest.</p>
+        <button type="button" id="words-go" class="wide">Show random words now</button>
+      </div>
+    </section>
+
+    <!-- Mix: a rotation of several things -->
+    <section id="tab-mix" aria-labelledby="h-mix" hidden>
+      <h2 id="h-mix">Mix</h2>
+      <div class="card">
+        <p class="hint">A rotation, top to bottom, then from the top again. Followers shows each switched-on platform for the time given. Entries with nothing to show are skipped.</p>
+        <ol id="mix" class="list"></ol>
+        <p id="mix-empty" class="hint">Nothing in the mix yet.</p>
+        <div class="inline">
+          <label for="mix-kind" class="sr">Entry to add</label>
+          <select id="mix-kind">
+            <option value="followers">Followers</option>
+            <option value="random">Random word</option>
+            <option value="text">Message</option>
+            <option value="clock">Clock</option>
+            <option value="date">Date</option>
+            <option value="weather">Weather</option>
+            <option value="countdown">Countdown</option>
+          </select>
+          <button type="button" id="mix-add">Add</button>
+        </div>
+        <button type="button" id="mix-go" class="wide">Show the mix now</button>
+      </div>
+    </section>
+
+    <!-- Followers -->
+    <section id="tab-followers" class="admin-only" aria-labelledby="h-followers" hidden>
+      <h2 id="h-followers">Followers</h2>
+      <div id="platforms"></div>
+      <div class="card">
+        <div class="field">
+          <label for="cycle_seconds">Switch platform every</label>
+          <span class="unit"><input id="cycle_seconds" type="number" inputmode="numeric" min="20" max="3600" data-cfg="cycle_seconds"> seconds</span>
+        </div>
+        <div class="field">
+          <label for="poll_minutes">Fetch the counts every</label>
+          <span class="unit"><input id="poll_minutes" type="number" inputmode="numeric" min="5" max="1440" data-cfg="poll_minutes"> minutes</span>
+        </div>
+        <label class="check"><input type="checkbox" data-cfg="label_logos"> Logo flap as the label, instead of TT / IG / FB</label>
+        <div class="field">
+          <label for="label_width">Label width</label>
+          <select id="label_width" data-cfg="label_width" data-type="number"><option value="2">2 flaps</option><option value="1">1 flap</option></select>
+        </div>
+        <label class="check"><input type="checkbox" data-cfg="celebrate"> Flash the display at a milestone</label>
+        <div class="field">
+          <label for="milestone_step">Milestone every</label>
+          <span class="unit"><input id="milestone_step" type="number" inputmode="numeric" min="1" data-cfg="milestone_step"> followers</span>
+        </div>
+      </div>
+      <details class="card">
+        <summary>Paste a token by hand</summary>
+        <p class="hint">Easier: <b>Connect</b> on each platform above, through the app server. Or run <code>python -m auth &lt;platform&gt;</code> from <code>tools/</code>, which sends the tokens for you. Tokens are only ever shown masked.</p>
+        <form id="token-form">
+          <label for="tk-platform">Platform</label>
+          <select id="tk-platform" name="platform">
+            <option value="instagram">Instagram</option>
+            <option value="facebook">Facebook</option>
+            <option value="tiktok">TikTok</option>
+          </select>
+          <label>Access token <input name="access_token" type="password" autocomplete="off"></label>
+          <label data-for="facebook">Page ID <input name="page_id" autocomplete="off"></label>
+          <label data-for="tiktok">Refresh token <input name="refresh_token" type="password" autocomplete="off"></label>
+          <label data-for="tiktok">Client key <input name="client_key" autocomplete="off"></label>
+          <label data-for="tiktok">Client secret <input name="client_secret" type="password" autocomplete="off"></label>
+          <div class="row">
+            <button type="submit">Save token</button>
+            <button type="button" id="clear-token" class="danger">Clear this platform's tokens</button>
+          </div>
+        </form>
+      </details>
+    </section>
+
+    <!-- Settings -->
+    <section id="tab-settings" aria-labelledby="h-settings" hidden>
+      <div class="admin-only">
+      <h2 id="h-settings">Display</h2>
+      <div class="card">
+        <div class="field">
+          <label for="text_align">Text position</label>
+          <select id="text_align" data-cfg="text_align"><option value="left">Left</option><option value="center">Centre</option><option value="right">Right</option></select>
+        </div>
+        <div class="field">
+          <label for="speed">Flap speed</label>
+          <span class="unit"><input id="speed" type="number" inputmode="numeric" min="1" max="12" data-cfg="speed"> rpm</span>
+        </div>
+        <div class="field">
+          <label for="units">Number of flap units</label>
+          <input id="units" type="number" inputmode="numeric" min="1" max="16" data-cfg="units">
+        </div>
+        <label class="check"><input type="checkbox" data-cfg="clock_24h"> 24-hour clock</label>
+        <div class="field">
+          <label for="date_lang">Month names</label>
+          <select id="date_lang" data-cfg="date_lang"><option value="en">English (FEB)</option><option value="pt">Português (FEV)</option></select>
+        </div>
+      </div>
+
+      <h2>Quiet hours</h2>
+      <div class="card">
+        <p class="hint">The flaps stay still between these times. Set both to the same time for no quiet hours.</p>
+        <div class="pair">
+          <div class="field"><label for="quiet_start">From</label><input id="quiet_start" type="time" data-cfg="quiet_start"></div>
+          <div class="field"><label for="quiet_end">Until</label><input id="quiet_end" type="time" data-cfg="quiet_end"></div>
+        </div>
+        <div class="field">
+          <label for="timezone">Time zone</label>
+          <select id="timezone" data-cfg="timezone"></select>
+        </div>
+        <div class="field" id="tz-custom-row" hidden>
+          <label for="tz-custom">POSIX time zone</label>
+          <input id="tz-custom" autocomplete="off" placeholder="WET0WEST,M3.5.0/1,M10.5.0">
+        </div>
+      </div>
+
+      <h2>Weather</h2>
+      <form id="weather-form" class="card">
+        <p class="hint">For the Weather mode: the temperature outside, from Open-Meteo (free, no account). The display fetches it every 15 minutes while Weather is on show.</p>
+        <div class="pair">
+          <div class="field"><label for="w-lat">Latitude</label><input id="w-lat" name="lat" inputmode="decimal" autocomplete="off" placeholder="38.72"></div>
+          <div class="field"><label for="w-lon">Longitude</label><input id="w-lon" name="lon" inputmode="decimal" autocomplete="off" placeholder="-9.14"></div>
+        </div>
+        <button type="button" id="w-here" class="quiet wide" hidden>Use this phone's location</button>
+        <div class="field">
+          <label for="w-unit">Temperature in</label>
+          <select id="w-unit" name="unit"><option value="c">°C</option><option value="f">°F</option></select>
+        </div>
+        <p id="weather-state" class="hint"></p>
+        <div class="row">
+          <button type="submit">Save</button>
+          <button type="button" id="w-off" class="quiet">Switch off</button>
+        </div>
+      </form>
+
+      <h2>Device</h2>
+      <div class="card">
+        <dl id="device" class="facts"></dl>
+        <button type="button" id="rehome" class="quiet wide">Re-home all units</button>
+      </div>
+      </div>
+
+      <div id="local-only" hidden>
+        <h2>App server</h2>
+        <form id="remote-form" class="card">
+          <p class="hint">Lets you use this app from anywhere: the display connects out to your server. Leave the address empty to switch it off.</p>
+          <label>Server address <input name="remote_url" type="url" inputmode="url" autocomplete="off" placeholder="https://flap.example.com"></label>
+          <label>Device token <input name="remote_token" type="password" autocomplete="off" placeholder="unchanged"></label>
+          <p id="remote-state" class="hint"></p>
+          <button type="submit">Save</button>
+        </form>
+        <h2>Admin key</h2>
+        <div class="card">
+          <label>Admin key <input id="admin-key" type="password" autocomplete="current-password" placeholder="needed to change anything"></label>
+          <p class="hint">Kept in this browser only. Set on the display by holding BOOT while powering on.</p>
+        </div>
+      </div>
+
+      <div id="server-only" hidden>
+        <div class="admin-only">
+        <h2>Server</h2>
+        <form id="server-form" class="card">
+          <label>Name shown in the app <input name="display_name" maxlength="40" placeholder="Split-Flap"></label>
+          <label>Time zone for times in the app <input name="time_zone" list="tz-list" autocomplete="off" placeholder="Europe/Lisbon"></label>
+          <datalist id="tz-list"></datalist>
+          <button type="submit">Save</button>
+        </form>
+        </div>
+
+        <h2>Your account</h2>
+        <form id="account-form" class="card">
+          <p id="account-env" class="hint" hidden>This account is set by the APP_PASSWORD variable on the server.</p>
+          <label>Username <input name="username" autocomplete="username" autocapitalize="none" maxlength="40" required></label>
+          <label>New password <input name="new_password" type="password" autocomplete="new-password" minlength="12" placeholder="unchanged"></label>
+          <label>Current password <input name="current_password" type="password" autocomplete="current-password" required></label>
+          <p class="hint">A new password signs out every other phone.</p>
+          <button type="submit">Save</button>
+        </form>
+
+        <div class="admin-only">
+        <h2>People</h2>
+        <div class="card">
+          <p class="hint"><b>Admins</b> can do everything. <b>Staff</b> can change what's shown (Show, Words, Mix) but not the settings, followers or accounts.</p>
+          <ul id="users" class="list"></ul>
+          <form id="user-add">
+            <label>Username <input name="username" autocomplete="off" autocapitalize="none" maxlength="40" required></label>
+            <label>Password <input name="password" type="password" autocomplete="new-password" minlength="12" required></label>
+            <div class="field">
+              <label for="ua-role">Role</label>
+              <select id="ua-role" name="role"><option value="staff">Staff</option><option value="admin">Admin</option></select>
+            </div>
+            <p class="hint">At least 12 characters. They can change it themselves under Your account.</p>
+            <button type="submit">Add person</button>
+          </form>
+        </div>
+
+        <h2>Device token</h2>
+        <form id="dtoken-form" class="card">
+          <p id="dtoken-state" class="hint"></p>
+          <div id="dtoken-make">
+            <label>Current password <input name="current_password" type="password" autocomplete="current-password" required></label>
+            <button type="submit" class="quiet wide">Make a new device token</button>
+          </div>
+          <div id="dtoken-new" hidden>
+            <p>Copy it now, it won't be shown again. Enter it on the display's own page under <b>Settings → App server</b>. The old token has stopped working.</p>
+            <div class="inline"><input id="dtoken-value" class="token" readonly aria-label="New device token"><button type="button" id="dtoken-copy" class="quiet">Copy</button></div>
+          </div>
+        </form>
+        </div>
+      </div>
+
+      <form id="logout" method="post" action="/logout" hidden>
+        <button type="submit" class="quiet wide">Sign out</button>
+      </form>
+    </section>
+  </main>
+
+  <p id="toast" class="toast" role="status" aria-live="polite"></p>
+
+  <nav class="tabs" aria-label="Sections">
+    <button type="button" data-tab="now" aria-current="page">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 12h18M9 5v14M15 5v14"/></svg>Show</button>
+    <button type="button" data-tab="words">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h3l3 5-3 5H4M20 7h-3l-7 10M20 17h-3l-1.5-2.2M17 4l3 3-3 3M17 14l3 3-3 3"/></svg>Words</button>
+    <button type="button" data-tab="mix">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 6h12M8 12h12M8 18h12"/><circle cx="4" cy="6" r="1"/><circle cx="4" cy="12" r="1"/><circle cx="4" cy="18" r="1"/></svg>Mix</button>
+    <button type="button" data-tab="followers" class="admin-only">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.6-3.6 3.2-5.5 6.5-5.5s5.900 1.900 6.500 5.500M16 5a3.500 3.500 0 0 1 0 6.500M18.500 14.800c1.700.800 2.700 2.500 3 5.200"/></svg>Followers</button>
+    <button type="button" data-tab="settings">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h10M18 7h2M4 17h2M10 17h10"/><circle cx="16" cy="7" r="2"/><circle cx="8" cy="17" r="2"/></svg>Settings</button>
+  </nav>
+
+  <script src="demo.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
