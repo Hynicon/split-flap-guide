@@ -218,11 +218,11 @@ dialog.zoom img { display: block; max-width: 96vw; max-height: 92vh; background:
           <tr><td>XH-4 cable, plugs on both ends, 100 mm (bus)</td><td class="n" id="busCables">8</td></tr>
           <tr><td>XH-3 cable, plug on one end, 300 mm (hall sensor)</td><td class="n"><span class="N">9</span></td></tr>
           <tr><td>XH-4 cable, plug on one end, 200 mm (power + ESP32)</td><td class="n">1</td></tr>
-          <tr><td>ESP32 DevKit, BSS138 level-shifter module, 12→5 V buck</td><td class="n">1 each</td></tr>
+          <tr><td>ESP32 DevKit V1 (30-pin), 4-channel BSS138 level shifter, MP1584 12→5 V buck (the tray is sized for these)</td><td class="n">1 each</td></tr>
           <tr><td>12 V ≥3 A supply, 1000 µF 25 V capacitor</td><td class="n">1 each</td></tr>
           <tr><td>DC jack for a hole under 9 mm (the case hole is 9.2 mm)</td><td class="n">1</td></tr>
           <tr><td>KCD1-101 rocker switch (the case hole is 18.5×12.5 mm)</td><td class="n">1</td></tr>
-          <tr><td>22 AWG silicone wire, flux, double-sided foam tape</td><td class="n">—</td></tr>
+          <tr><td>22 AWG silicone wire, flux</td><td class="n">—</td></tr>
         </tbody>
       </table></div>
     </div>
@@ -257,11 +257,12 @@ dialog.zoom img { display: block; max-width: 96vw; max-height: 92vh; background:
       <figure class="photo"><img src="img/part-fc-left.png" alt="FrontCoverLeft: an open box with display slots" loading="lazy" onerror="this.parentNode.remove()"><figcaption>FrontCoverLeft</figcaption></figure>
       <figure class="photo"><img src="img/part-fc-center.png" alt="FrontCoverCenter: two tabs joined by a thin strip" loading="lazy" onerror="this.parentNode.remove()"><figcaption>FrontCoverCenter</figcaption></figure>
       <figure class="photo"><img src="img/part-fc-right.png" alt="FrontCoverRight" loading="lazy" onerror="this.parentNode.remove()"><figcaption>FrontCoverRight</figcaption></figure>
-      <figure class="photo"><img src="img/part-bc-left.png" alt="BackCoverLeft: a shallow tray with a keyhole" loading="lazy" onerror="this.parentNode.remove()"><figcaption>BackCoverLeft</figcaption></figure>
+      <figure class="photo"><img src="img/part-bc-left-mount.png" alt="BackCoverLeft, mount version: a shallow tray with a keyhole, the switch and jack holes in its left end, and four round bosses on the floor" loading="lazy" onerror="this.parentNode.remove()"><figcaption>BackCoverLeft_mount</figcaption></figure>
       <figure class="photo"><img src="img/part-bc-center.png" alt="BackCoverCenter" loading="lazy" onerror="this.parentNode.remove()"><figcaption>BackCoverCenter</figcaption></figure>
       <figure class="photo"><img src="img/part-bc-right.png" alt="BackCoverRight" loading="lazy" onerror="this.parentNode.remove()"><figcaption>BackCoverRight</figcaption></figure>
+      <figure class="photo"><img src="img/part-tray.png" alt="ElectronicsTray: a flat plate with four screw holes, one large opening with clips at its ends and two small openings with clips at their sides" loading="lazy" onerror="this.parentNode.remove()"><figcaption>ElectronicsTray</figcaption></figure>
     </div>
-    <p style="font-size:14px;color:var(--muted)">Upstream's renders of the 10-unit parts. Shorter cases have shorter Left and/or Right pieces.</p>
+    <p style="font-size:14px;color:var(--muted)">Upstream's renders of the 10-unit parts, except the back cover Left and the tray, which are rendered from this project's files. Shorter cases have shorter Left and/or Right pieces.</p>
   </section>
 
   <section id="pcb">
@@ -470,6 +471,7 @@ Signals
             <tr><td>Level shifter (BSS138)</td><td>The upper small one</td><td>Pin rows at the open sides, the plain short edges under the hook and the bar.</td></tr>
           </tbody>
         </table></div>
+        <figure class="photo"><img src="img/tray-in-cover.png" alt="The tray screwed onto the four bosses in the back cover, with the buck converter and level shifter on the left and the ESP32 on the right, its USB end at the top" loading="lazy" onerror="this.parentNode.remove()"><figcaption>The tray in place, seen from inside the cover with the switch and jack end on the left. Boards drawn as simple blocks.</figcaption></figure>
         <p>The holders are sized for a 51.8 × 28.2 mm ESP32, a 22 × 17 mm MP1584 and a 16 × 13.5 mm shifter. Measure yours before printing. If one differs, change its size at the top of the script and run it again.</p>
         <p>Melt an <b>M3 insert</b> into each of the 4 new bosses on the cover's floor. Lay the cover inside-up with the switch and jack end on your left: the tray goes on the bosses with the ESP32 on the right and its USB port pointing up, towards the keyhole. Fix it with 4 <b>M3×8</b>. Wires can run underneath the tray, which sits 7.5 mm above the floor. Leave enough slack for the cover to lie open beside the case.</p>
         <div class="kit"><span>4× M3 insert</span><span>4× M3×8</span></div></div></li>
