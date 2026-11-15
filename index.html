@@ -202,6 +202,7 @@ dialog.zoom img { display: block; max-width: 96vw; max-height: 92vh; background:
           <tr><td><code>FlapDrumInner</code> + <code>FlapDrumOuter</code></td><td class="n"><span class="N">9</span> each</td></tr>
           <tr><td>Flaps, 45 per unit</td><td class="n" id="flaps">405</td></tr>
           <tr><td>Case: Left, Center, Right of MiddleFrame, FrontCover, BackCover</td><td class="n">9 pcs</td></tr>
+          <tr><td>Electronics tray (<code>ElectronicsTray.stl</code>); print the back cover Left from its <code>_mount</code> file</td><td class="n">1</td></tr>
           <tr><td colspan="2" id="caseFiles" style="font-size:13px;color:var(--muted)"></td></tr>
         </tbody>
       </table></div>
@@ -458,17 +459,20 @@ Signals
     <ol class="steps" data-stage="esp">
       <li><input type="checkbox" id="es1"><label for="es1">Set the buck converter to 5.0 V: feed its IN+ and IN− with 12 V, measure OUT+ to OUT−, and turn the trimmer. Nothing else is connected to its output yet.</label></li>
       <li><input type="checkbox" id="es2"><label for="es2">Wire as above with 22 AWG wire for everything carrying 12 V or 5 V. Cut the power lead's 12V wire and put the rocker switch in it. Use the wire tags you made in stage 1, not cable colours, and insulate every joint.</label></li>
-      <li><input type="checkbox" id="es6"><label for="es6"><b>Mount the boards in the back cover.</b> Use the piece with the switch and jack holes in its end. Lay it inside-up with that end on your left and the keyhole slot near the top. All three boards go in a row along the lower part of the floor, stuck down with double-sided foam tape. Distances are measured from the inside of the end wall and the bottom wall.</label>
-        <div class="where"><div class="tbl"><table>
-          <thead><tr><th>Board</th><th>From the end wall</th><th>Up from the bottom wall</th></tr></thead>
+      <li><input type="checkbox" id="es6"><label for="es6"><b>Mount the boards on the electronics tray.</b> Print <code>ElectronicsTray.stl</code> flat, as it comes, and print the back cover's Left piece from the <code>_mount</code> file (<code>BackCoverLeft_mount.stl</code>, or <code>BackCoverLeft_<span class="N">9</span>unit_mount.stl</code>): it is the normal piece plus 4 bosses on the floor. Both come from <code>python tools/make_electronics_mount.py</code>. The tray grips each board by its edges, so solder the wires to the boards first.</label>
+        <div class="where">
+        <p>Each holder has a rigid hook on one side and a flexing bar with a small lip on the other. Tuck one edge of the board under the rigid hook, then press the other edge down until the bar clicks over it. To take a board out, push the bar outwards with a small screwdriver.</p>
+        <div class="tbl"><table>
+          <thead><tr><th>Board</th><th>Holder</th><th>Which way</th></tr></thead>
           <tbody>
-            <tr><td>Buck converter, with the 1000 µF capacitor lying on its side next to it</td><td>25–70 mm</td><td>15–45 mm</td></tr>
-            <tr><td>Level shifter</td><td>75–90 mm</td><td>15–40 mm</td></tr>
-            <tr><td>ESP32, standing lengthwise with its USB port pointing up</td><td>95–125 mm</td><td>15–70 mm</td></tr>
+            <tr><td>ESP32 (30-pin DevKit V1, pins down)</td><td>The big one</td><td>USB end under the two corner hooks, so the plug fits between them. The pins go through the open floor.</td></tr>
+            <tr><td>Buck converter (MP1584)</td><td>The lower small one</td><td>Long edges under the hook and the bar. The solder pads at the corners stay clear.</td></tr>
+            <tr><td>Level shifter (BSS138)</td><td>The upper small one</td><td>Pin rows at the open sides, the plain short edges under the hook and the bar.</td></tr>
           </tbody>
         </table></div>
-        <p>Leave three areas clear: the first 25 mm from the end wall, where the switch and jack bodies stick in; the bottom 12 mm, where the screw bosses are; and everything above 85 mm, where a wall screw comes through the keyhole.</p>
-        <p>Keep everything under 18 mm tall: the tray is 20 mm deep inside, and its rim sits against the middle frame. If the ESP32 has pins pointing down, stand it on a stack of foam tape as tall as the pins. On a 7-unit case this piece is 50 mm shorter: put the level shifter above the buck converter (50–65 mm up) and the ESP32 at 75–105 mm from the end wall. Leave enough slack in the wires for the cover to lie open beside the case.</p></div></li>
+        <p>The holders are sized for a 51.8 × 28.2 mm ESP32, a 22 × 17 mm MP1584 and a 16 × 13.5 mm shifter. Measure yours before printing. If one differs, change its size at the top of the script and run it again.</p>
+        <p>Melt an <b>M3 insert</b> into each of the 4 new bosses on the cover's floor. Lay the cover inside-up with the switch and jack end on your left: the tray goes on the bosses with the ESP32 on the right and its USB port pointing up, towards the keyhole. Fix it with 4 <b>M3×8</b>. Wires can run underneath the tray, which sits 7.5 mm above the floor. Leave enough slack for the cover to lie open beside the case.</p>
+        <div class="kit"><span>4× M3 insert</span><span>4× M3×8</span></div></div></li>
       <li><input type="checkbox" id="es3"><label for="es3">Flash the master: <code>pio run -e master -t upload</code>, then <code>pio run -e master -t uploadfs</code>.</label></li>
             <li><input type="checkbox" id="es5"><label for="es5">Serial monitor at 115200: it prints <code>[bus] scan: 1/9 units answered: 0x10=ok …</code> with just unit 0 connected, and the rest <code>MISSING</code>. Type text; it should appear on the flap.</label></li>
       <li><input type="checkbox" id="es4"><label for="es4">Connect it to Wi-Fi: follow <a href="https://github.com/Hynicon/split-flap#first-time-setup"><b>First-time setup</b></a> in the README. If you built anything other than 9 units, set <b>units = <span class="N">9</span></b> on its Settings page, because the firmware's default is 9.</label></li>
@@ -520,7 +524,7 @@ Signals
   ];
   const CASE = [
     ['M3×16 socket head', 'FrontCover 6, BackCover 8', 14], ['M3 nut', 'FrontCover 8, BackCover 4', 12],
-    ['M3×8 pan head', 'FrontCover 8, BackCover 4', 12], ['M3 heat insert', 'MiddleFrame 8, FrontCover 6', 14],
+    ['M3×8 pan head', 'FrontCover 8, BackCover 4, electronics tray 4', 16], ['M3 heat insert', 'MiddleFrame 8, FrontCover 6, back cover bosses 4', 18],
     ['M4×20 pan head', 'MiddleFrame joints', 4], ['M4 nut', 'MiddleFrame joints', 4],
   ];
   const WIDTH = { 7: 362, 8: 412, 9: 463, 10: 513 };
