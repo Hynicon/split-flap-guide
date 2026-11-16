@@ -55,6 +55,9 @@ p { margin: 0; max-width: 68ch; }
 .steps .where p { margin: 8px 0 0; }
 .steps .note { grid-column: 2; font-size: 14px; color: var(--muted); }
 .kit { grid-column: 2; display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.kit .into { font-weight: 600; }
+.kit .into.ins { background: var(--accent); border-color: var(--accent); color: var(--accent-fg); }
+.kit .into.no { border-style: dashed; }
 .kit span { font: 500 12px var(--mono); padding: 2px 7px; border-radius: 4px; border: 1px solid var(--line); background: var(--bg); white-space: nowrap; }
 .go3d { font: 500 12px var(--mono); padding: 2px 8px; border-radius: 4px; border: 1px solid var(--accent); background: transparent; color: var(--fg); cursor: pointer; }
 .go3d::before { content: "▶ "; color: var(--accent); }
@@ -77,6 +80,9 @@ pre { margin: 0; background: var(--panel); border: 1px solid var(--line); border
 .photo img { display: block; width: 100%; height: auto; }
 .photo figcaption { font-size: 13px; color: var(--muted); padding: 6px 10px; }
 .steps .photo { grid-column: 2; max-width: 440px; }
+.shots { display: flex; flex-wrap: wrap; gap: 8px; grid-column: 2; }
+.shots .photo { flex: 1 1 200px; max-width: 440px; }
+[data-photos] .shots { margin-top: 12px; }
 .gallery { display: grid; grid-template-columns: repeat(auto-fill, minmax(118px, 1fr)); gap: 8px; }
 .gallery img { aspect-ratio: 1; object-fit: contain; background: #fff; padding: 6px; box-sizing: border-box; }
 .gallery figcaption { font: 12px var(--mono); padding: 4px 6px; }
@@ -185,7 +191,8 @@ dialog.zoom img { display: block; max-width: 96vw; max-height: 92vh; background:
   <header>
     <h1>Split-flap build guide</h1>
     <div class="warn"><b>Work in progress</b>This project is for testing and is not complete. The firmware, the phone app, the server and the electronics tray have not yet been tested together on a finished display, and steps may change. Build it at your own risk, and check each step against your own parts.</div>
-    <p class="lede">From printed parts and bare PCBs to a working display. It follows David Königsmann's original instructions (Printables 69464) and his photos, changed for this build: shortened case, hand-soldered boards, and an ESP32 in place of the ESP-01. Hole positions and screw paths come from the CAD model. Pick your size at the top and every quantity updates. Ticks are saved in this browser, and <b>Next step</b> in the top bar jumps to the first step you haven't ticked. Steps with a <span class="go3d" style="cursor:default">3D</span> button show that step in the stage's 3D diagram. Click any photo to enlarge it. The firmware, the phone app and the remote server are in the <a href="https://github.com/Hynicon/split-flap">split-flap repository</a>. To see how the finished display and its phone app behave, <a href="demo/">try the demo</a>: a virtual display in your browser.</p>
+    <p class="lede">From printed parts and bare PCBs to a working display. It follows David Königsmann's original instructions (Printables 69464) and his photos, changed for this build: shortened case, hand-soldered boards, and an ESP32 in place of the ESP-01. Hole positions and screw paths come from the CAD model. Pick your size at the top and every quantity updates. Ticks are saved in this browser, and <b>Next step</b> in the top bar jumps to the first step you haven't ticked. Steps with a <span class="go3d" style="cursor:default">3D</span> button show that step in the stage's 3D diagram. Click any photo to enlarge it. Every screw step says what the screw goes into: <span class="kit" style="display:inline-flex"><span class="into ins">into inserts</span></span> means brass inserts you melted in earlier, <span class="kit" style="display:inline-flex"><span class="into no">no insert · into nuts</span></span> or <span class="kit" style="display:inline-flex"><span class="into no">no insert · cuts its own thread</span></span> means no insert there. The firmware, the phone app and the remote server are in the <a href="https://github.com/Hynicon/split-flap">split-flap repository</a>. To see how the finished display and its phone app behave, <a href="demo/">try the demo</a>: a virtual display in your browser.</p>
+    <div data-photos="hero"></div>
     <nav aria-label="Stages"><ol>
       <li><a href="#parts">Parts</a></li><li><a href="#pcb">1 PCBs</a></li><li><a href="#drum">2 Drums</a></li>
       <li><a href="#unit">3 Units</a></li><li><a href="#first">4 First unit test</a></li><li><a href="#case">5 Case</a></li>
@@ -264,6 +271,7 @@ dialog.zoom img { display: block; max-width: 96vw; max-height: 92vh; background:
       <figure class="photo"><img src="img/part-tray.png" alt="ElectronicsTray: a flat plate with four screw holes, one large opening with clips at its ends and two small openings with clips at their sides" loading="lazy" onerror="this.parentNode.remove()"><figcaption>ElectronicsTray</figcaption></figure>
     </div>
     <p style="font-size:14px;color:var(--muted)">Upstream's renders of the 10-unit parts, except the back cover Left and the tray, which are rendered from this project's files. Shorter cases have shorter Left and/or Right pieces.</p>
+    <div data-photos="parts"></div>
   </section>
 
   <section id="pcb">
@@ -338,7 +346,7 @@ dialog.zoom img { display: block; max-width: 96vw; max-height: 92vh; background:
       <li><input type="checkbox" id="dm6"><label for="dm6">Lift the outer half a little, slide in a few flaps, press it back, and repeat. Start at the mark with <b>Flap 2</b>, the flap that is blank on one side and has part of an A on the other. Continue 3, 4 … 45, then Flap 1 last. After the first dozen, flip through them by hand: the halves should meet to form A, B, C. If they don't, take them out and reverse the direction around the drum or the way the flaps face.</label>
         <div class="kit"><button class="go3d" type="button" data-seq="drum" data-anim="4">3D</button></div>
         <div class="note">Flaps go in by file number, so keep the plates separate. If you printed the five <code>Flaps PT</code> plates, they are the whole set. If you printed upstream's flaps, take 1, 14, 15, 24, 25, 28–31 and 41–45 from <code>Flaps PT</code> instead. The drum then reads: blank A–Z Ã Ç É 0–9 Á . TikTok Instagram Facebook.</div></li>
-      <li><input type="checkbox" id="dm7"><label for="dm7">Lock the halves: two <b>M2×8</b> screws through the counterbored holes in <code>FlapDrumInner</code> into the inserts.</label><div class="kit"><span>2× M2×8</span><button class="go3d" type="button" data-seq="drum" data-anim="5">3D</button></div></li>
+      <li><input type="checkbox" id="dm7"><label for="dm7">Lock the halves: two <b>M2×8</b> screws through the counterbored holes in <code>FlapDrumInner</code> into the two inserts from step 1.</label><div class="kit"><span>2× M2×8</span><span class="into ins">into inserts</span><button class="go3d" type="button" data-seq="drum" data-anim="5">3D</button></div></li>
       <li><input type="checkbox" id="dm8"><label for="dm8">Spin the drum by hand. Every flap should drop cleanly and none should snag.</label></li>
     </ol>
     <div class="tally" data-tally="drum" data-label="Drums built, with their sensor cable soldered"></div>
@@ -350,14 +358,14 @@ dialog.zoom img { display: block; max-width: 96vw; max-height: 92vh; background:
     <div class="anim-host" data-seq="unit" data-label="unit assembly"></div>
     <p class="hint">The frame and drum are the CAD parts. The motor, sensor and board are simplified shapes placed on the frame's real mounting holes. The flaps and cables are left out.</p>
     <ol class="steps" data-stage="unit">
-      <li><input type="checkbox" id="ut1"><label for="ut1">On the drum side of the PCB plate, each of the four corner bosses has a hex pocket. Push <b>M3 nuts</b> into two diagonally opposite pockets: top left and bottom right, for example. If a nut won't seat, put an M3 screw through from the PCB side and tighten it to pull the nut in, then take the screw out.</label><div class="kit"><span>2× M3 nut</span><button class="go3d" type="button" data-seq="unit" data-anim="1">3D</button></div></li>
-      <li><input type="checkbox" id="ut2"><label for="ut2">Set the <b>stepper</b> against its two posts on the side wall, shaft pointing away from the wall, and fix it with two M4×8 screws through its mounting ears. Its wires exit toward the small round post at the far end of the base, as in the photo.</label><div class="kit"><span>2× M4×8</span><button class="go3d" type="button" data-seq="unit" data-anim="2">3D</button></div></li>
-      <li><input type="checkbox" id="ut3"><label for="ut3">Screw the <b>KY-003</b>, with its cable already soldered, to its mount with two M2×4 screws, as in the photo.</label><div class="kit"><span>2× M2×4</span><button class="go3d" type="button" data-seq="unit" data-anim="3">3D</button></div>
-        <figure class="photo"><img src="img/unit-top.jpeg" alt="Unit frame from above with the stepper, hall sensor and PCB mounted" loading="lazy" onerror="this.parentNode.remove()"></figure></li>
+      <li><input type="checkbox" id="ut1"><label for="ut1">On the drum side of the PCB plate, each of the four corner bosses has a hex pocket. Push <b>M3 nuts</b> into two diagonally opposite pockets: top left and bottom right, for example. If a nut won't seat, put an M3 screw through from the PCB side and tighten it to pull the nut in, then take the screw out. No inserts on this plate: the nuts are what the case screws go into in stage 5.</label><div class="kit"><span>2× M3 nut</span><span class="into no">no insert · nuts in pockets</span><button class="go3d" type="button" data-seq="unit" data-anim="1">3D</button></div></li>
+      <li><input type="checkbox" id="ut2"><label for="ut2">Set the <b>stepper</b> against its two posts on the side wall, shaft pointing away from the wall, and fix it with two M4×8 screws through its mounting ears, straight into the posts. <b>No insert</b>: the posts have plain 3.8 mm holes and the screws cut their own thread, so stop as soon as they are snug or they strip. Its wires exit toward the small round post at the far end of the base, as in the photo.</label><div class="kit"><span>2× M4×8</span><span class="into no">no insert · cuts its own thread</span><button class="go3d" type="button" data-seq="unit" data-anim="2">3D</button></div></li>
+      <li><input type="checkbox" id="ut3"><label for="ut3">Screw the <b>KY-003</b>, with its cable already soldered, to its mount with two M2×4 screws, as in the photo. <b>No insert</b>: they cut their own thread in the mount's 1.8 mm holes. Turn gently, the plastic is thin.</label><div class="kit"><span>2× M2×4</span><span class="into no">no insert · cuts its own thread</span><button class="go3d" type="button" data-seq="unit" data-anim="3">3D</button></div>
+        <figure class="photo" data-old><img src="img/unit-top.jpeg" alt="Unit frame from above with the stepper, hall sensor and PCB mounted" loading="lazy" onerror="this.parentNode.remove()"></figure></li>
       <li><input type="checkbox" id="ut4"><label for="ut4">Route the stepper and sensor cables through the back of the frame and press them into the cable channel.</label>
         <figure class="photo"><img src="img/unit-cables.jpeg" alt="Underside of the unit frame with cables pressed into the channel" loading="lazy" onerror="this.parentNode.remove()"></figure></li>
-      <li><input type="checkbox" id="ut5"><label for="ut5">Fix the <b>PCB</b> to the outside of the PCB plate. It fits either way up, so check first: <b>U10 and U6 go toward the hall sensor end</b>, and U7 and U8 toward the small round post. Drive two M3×6 screws through opposite corners into the 3 mm post holes. They cut their own thread, so stop when snug. Plug the motor into U10 ("28BYJ-48 Stepper 12V", 5-pin) and the sensor into U6 ("Magnet Sensor", 3-pin).</label><div class="kit"><span>2× M3×6</span><button class="go3d" type="button" data-seq="unit" data-anim="4">3D</button></div>
-        <figure class="photo"><img src="img/unit-pcb.jpeg" alt="PCB mounted on the unit's plate with the Nano, DIP switch and connectors" loading="lazy" onerror="this.parentNode.remove()"><figcaption>An older board. Yours says Version 1.2, has no 12V terminal, and has the 7805 upright.</figcaption></figure></li>
+      <li><input type="checkbox" id="ut5"><label for="ut5">Fix the <b>PCB</b> to the outside of the PCB plate. It fits either way up, so check first: <b>U10 and U6 go toward the hall sensor end</b>, and U7 and U8 toward the small round post. Drive two M3×6 screws through opposite corners into the 3 mm post holes. <b>No insert</b>: they cut their own thread, so stop when snug. Plug the motor into U10 ("28BYJ-48 Stepper 12V", 5-pin) and the sensor into U6 ("Magnet Sensor", 3-pin).</label><div class="kit"><span>2× M3×6</span><span class="into no">no insert · cuts its own thread</span><button class="go3d" type="button" data-seq="unit" data-anim="4">3D</button></div>
+        <figure class="photo" data-old><img src="img/unit-pcb.jpeg" alt="PCB mounted on the unit's plate with the Nano, DIP switch and connectors" loading="lazy" onerror="this.parentNode.remove()"><figcaption>An older board. Yours says Version 1.2, has no 12V terminal, and has the 7805 upright.</figcaption></figure></li>
       <li><input type="checkbox" id="ut6"><label for="ut6">Fit the <b>drum</b>: its open end goes over the motor and sensor, and the hub in <code>FlapDrumInner</code> presses onto the motor shaft. Line up the flat in the hub with the flat on the shaft. Push it on until it is seated, then turn it by hand: it must not rub the frame, and the magnet must pass close to the sensor.</label>
         <div class="kit"><button class="go3d" type="button" data-seq="unit" data-anim="5">3D</button></div></li>
       <li><input type="checkbox" id="ut7"><label for="ut7">Set the <b>DIP switch</b> for this unit's position (table in stage 7) and label the frame. Plug in the <b>Nano</b> with its <b>USB end toward U10</b>. Backwards, it can be destroyed at power-up. All 30 pins must be in the headers.</label></li>
@@ -405,33 +413,33 @@ dialog.zoom img { display: block; max-width: 96vw; max-height: 92vh; background:
     <ol class="steps" data-stage="case">
       <li><input type="checkbox" id="ca1"><label for="ca1">Dry-fit each layer before anything else: lay its Left, Center and Right pieces face down and push the seams together. They should close without force, with the joint holes lined up. Trim or sand any that don't.</label>
         <div class="kit"><button class="go3d" type="button" data-seq="case" data-anim="2">3D</button></div></li>
-      <li><input type="checkbox" id="ca2"><label for="ca2"><b>Middle frame inserts.</b> Lay the three middle frame pieces back up: the back is the face with the counterbored holes. Find the 8 plain 4 mm holes in the outer rows, above and below windows <span class="insWin">1, 3, 6, 9</span>. Melt an M3 insert into each from the back.</label>
+      <li><input type="checkbox" id="ca2"><label for="ca2"><b>Middle frame inserts.</b> Lay the three middle frame pieces back up: the back is the face with the counterbored holes. Find the 8 plain 4 mm holes in the outer rows, above and below windows <span class="insWin">1, 3, 6, 9</span>. Melt an M3 insert into each from the back. These are the only inserts in the middle frame: the back cover screws into them in step 12.</label>
         <div class="kit"><span>8× M3 insert</span><button class="go3d" type="button" data-seq="case" data-anim="1">3D</button></div>
         <figure class="photo"><img src="img/mf-inserts.png" alt="Middle frame drawing with arrows at the eight insert holes" loading="lazy" onerror="this.parentNode.remove()"><figcaption>Upstream's drawing for the 10-unit frame. On a shorter case the window numbers above are what counts.</figcaption></figure></li>
-      <li><input type="checkbox" id="ca3"><label for="ca3"><b>Join the middle frame.</b> Put the Center piece between Left and Right so its tabs lie over their ends. Drop an <b>M4 nut</b> into each of the 4 hex pockets, which open toward the windows. Then drive an <b>M4×20</b> into each joint from the outer top or bottom edge, through the Center tab and into the nut.</label>
-        <div class="kit"><span>4× M4 nut</span><span>4× M4×20</span><button class="go3d" type="button" data-seq="case" data-anim="2">3D</button></div>
+      <li><input type="checkbox" id="ca3"><label for="ca3"><b>Join the middle frame.</b> Put the Center piece between Left and Right so its tabs lie over their ends. Drop an <b>M4 nut</b> into each of the 4 hex pockets, which open toward the windows. Then drive an <b>M4×20</b> into each joint from the outer top or bottom edge, through the Center tab and into the nut. The joints use nuts, not inserts.</label>
+        <div class="kit"><span>4× M4 nut</span><span>4× M4×20</span><span class="into no">no insert · into nuts</span><button class="go3d" type="button" data-seq="case" data-anim="2">3D</button></div>
         <div class="note">A bit of tape over a pocket keeps its nut in while you turn the frame over.</div></li>
       <li><input type="checkbox" id="ca4"><label for="ca4"><b>Fit the units.</b> Hold each unit against the front of the middle frame with its PCB through a window. Its two nuts line up with two of the four holes around that window. Unit 0 (DIP 0000) goes behind the leftmost window, seen from the front, then 1, 2 … to the right.</label>
         <div class="kit"><button class="go3d" type="button" data-seq="case" data-anim="3">3D</button></div></li>
-      <li><input type="checkbox" id="ca5"><label for="ca5"><b>Screw the units on.</b> From the back, drive an <b>M3×16</b> socket-head screw through each of the two holes that have a nut behind them and tighten. The other two holes stay empty.</label>
-        <div class="kit"><span>2× M3×16 per unit</span><button class="go3d" type="button" data-seq="case" data-anim="4">3D</button></div>
-        <figure class="photo"><img src="img/units-on-frame.jpeg" alt="Back of the middle frame with all units mounted and wired" loading="lazy" onerror="this.parentNode.remove()"></figure></li>
+      <li><input type="checkbox" id="ca5"><label for="ca5"><b>Screw the units on.</b> From the back, drive an <b>M3×16</b> socket-head screw through each of the two holes that have a nut behind them and tighten. <b>No insert</b>: they go into the nuts you pushed into the unit's PCB plate in stage 3. The other two holes stay empty.</label>
+        <div class="kit"><span>2× M3×16 per unit</span><span class="into no">no insert · into nuts</span><button class="go3d" type="button" data-seq="case" data-anim="4">3D</button></div>
+        <figure class="photo" data-old><img src="img/units-on-frame.jpeg" alt="Back of the middle frame with all units mounted and wired" loading="lazy" onerror="this.parentNode.remove()"></figure></li>
       <li><input type="checkbox" id="ca6"><label for="ca6"><b>Daisy-chain the units</b> with the <span class="Nm1">8</span> double-ended XH-4 cables: <b>U7 of each unit to U8 of the next</b>, starting with U7 of unit 0. Unit 0's U8 stays free for the power lead, and the last unit's U7 stays empty.</label>
         <figure class="wire"><div class="wire-scroll" id="chain"></div><figcaption>Seen from the back, so unit 0 is on the right. This shows the order only: find U7 and U8 by the labels printed on each board.</figcaption></figure>
         <div class="note">Check each cable before any power, because a reversed one puts 12 V on SCL. Meter between the two units: left leg of the 7805 to left leg of the 7805, Nano A4 to A4, A5 to A5, and GND to GND must all beep.</div>
-        <figure class="photo"><img src="img/cables.jpeg" alt="A hall sensor cable and an XH-4 bus cable" loading="lazy" onerror="this.parentNode.remove()"><figcaption>Upstream's cables, shorter than yours. Any slack in the 100 mm and 300 mm cables tucks into the case.</figcaption></figure></li>
-      <li><input type="checkbox" id="ca7"><label for="ca7"><b>Front cover inserts.</b> Stand each front cover piece on its face so the open back edge points up. Each piece has two 4 mm holes in that edge, one in the top wall and one in the bottom wall. Melt an M3 insert into each, 6 in total.</label>
+        <figure class="photo" data-old><img src="img/cables.jpeg" alt="A hall sensor cable and an XH-4 bus cable" loading="lazy" onerror="this.parentNode.remove()"><figcaption>Upstream's cables, shorter than yours. Any slack in the 100 mm and 300 mm cables tucks into the case.</figcaption></figure></li>
+      <li><input type="checkbox" id="ca7"><label for="ca7"><b>Front cover inserts.</b> Stand each front cover piece on its face so the open back edge points up. Each piece has two 4 mm holes in that edge, one in the top wall and one in the bottom wall. Melt an M3 insert into each, 6 in total. The middle frame screws into these in step 10.</label>
         <div class="kit"><span>6× M3 insert</span><button class="go3d" type="button" data-seq="case" data-anim="5">3D</button></div></li>
-      <li><input type="checkbox" id="ca8"><label for="ca8"><b>Join the front cover.</b> It's the same idea as the middle frame, with 4 joints per seam. Drop an <b>M3 nut</b> into each of the 8 hex pockets inside the top and bottom walls of the Left and Right pieces. At each seam there are 2 near the front face and 2 near the back edge. Drive an <b>M3×8</b> into each from the outer top or bottom edge, through the Center piece.</label>
-        <div class="kit"><span>8× M3 nut</span><span>8× M3×8</span><button class="go3d" type="button" data-seq="case" data-anim="6">3D</button></div></li>
+      <li><input type="checkbox" id="ca8"><label for="ca8"><b>Join the front cover.</b> It's the same idea as the middle frame, with 4 joints per seam. Drop an <b>M3 nut</b> into each of the 8 hex pockets inside the top and bottom walls of the Left and Right pieces. At each seam there are 2 near the front face and 2 near the back edge. Drive an <b>M3×8</b> into each from the outer top or bottom edge, through the Center piece, into the nut.</label>
+        <div class="kit"><span>8× M3 nut</span><span>8× M3×8</span><span class="into no">no insert · into nuts</span><button class="go3d" type="button" data-seq="case" data-anim="6">3D</button></div></li>
       <li><input type="checkbox" id="ca9"><label for="ca9"><b>Put the front cover on.</b> Lay the cover face down. Lower the middle frame onto it, units first, so the frame's front face sits flat on the cover's back edge. The cover's inserts line up with the counterbored holes in the frame's outer rows.</label>
         <div class="kit"><button class="go3d" type="button" data-seq="case" data-anim="7">3D</button></div></li>
-      <li><input type="checkbox" id="ca10"><label for="ca10"><b>Screw the front cover on</b> from the back: an <b>M3×16</b> through each of the 6 counterbored outer-row holes (between windows <span class="fcWin">1–2, 4–5, 8–9</span>, top and bottom) into the cover's inserts.</label>
-        <div class="kit"><span>6× M3×16</span><button class="go3d" type="button" data-seq="case" data-anim="8">3D</button></div></li>
-      <li><input type="checkbox" id="ca11"><label for="ca11"><b>Join the back cover</b>, the same way as the front cover: an <b>M3 nut</b> in each of the 4 hex pockets, and an <b>M3×8</b> into each from the outer top or bottom edge. Then fit the rocker switch and the DC jack into the two holes in the left end: the switch in the rectangular hole, the jack in the round one. Unsolder the jack from the power lead first if it won't pass through the hole.</label>
-        <div class="kit"><span>4× M3 nut</span><span>4× M3×8</span><button class="go3d" type="button" data-seq="case" data-anim="9">3D</button></div></li>
-      <li><input type="checkbox" id="ca12"><label for="ca12"><b>Close the back cover</b> only after stage 7 passes. Set it on the back of the middle frame and drive an <b>M3×16</b> through each of its 8 deep counterbored holes into the middle frame's inserts. The two keyholes in the back are for hanging it on a wall.</label>
-        <div class="kit"><span>8× M3×16</span><button class="go3d" type="button" data-seq="case" data-anim="10">3D</button></div></li>
+      <li><input type="checkbox" id="ca10"><label for="ca10"><b>Screw the front cover on</b> from the back: an <b>M3×16</b> through each of the 6 counterbored outer-row holes (between windows <span class="fcWin">1–2, 4–5, 8–9</span>, top and bottom) into the cover's inserts from step 7.</label>
+        <div class="kit"><span>6× M3×16</span><span class="into ins">into inserts</span><button class="go3d" type="button" data-seq="case" data-anim="8">3D</button></div></li>
+      <li><input type="checkbox" id="ca11"><label for="ca11"><b>Join the back cover</b>, the same way as the front cover: an <b>M3 nut</b> in each of the 4 hex pockets, and an <b>M3×8</b> into each from the outer top or bottom edge, into the nut. Then fit the rocker switch and the DC jack into the two holes in the left end: the switch in the rectangular hole, the jack in the round one. Unsolder the jack from the power lead first if it won't pass through the hole.</label>
+        <div class="kit"><span>4× M3 nut</span><span>4× M3×8</span><span class="into no">no insert · into nuts</span><button class="go3d" type="button" data-seq="case" data-anim="9">3D</button></div></li>
+      <li><input type="checkbox" id="ca12"><label for="ca12"><b>Close the back cover</b> only after stage 7 passes. Set it on the back of the middle frame and drive an <b>M3×16</b> through each of its 8 deep counterbored holes into the middle frame's inserts from step 2. The back cover itself needs no inserts for this. The two keyholes in the back are for hanging it on a wall.</label>
+        <div class="kit"><span>8× M3×16</span><span class="into ins">into inserts</span><button class="go3d" type="button" data-seq="case" data-anim="10">3D</button></div></li>
     </ol>
   </section>
 
@@ -474,8 +482,8 @@ Signals
         </table></div>
         <figure class="photo"><img src="img/tray-in-cover.png" alt="The tray screwed onto the four bosses in the back cover, with the buck converter and level shifter on the left and the ESP32 on the right, its USB end at the top" loading="lazy" onerror="this.parentNode.remove()"><figcaption>The tray in place, seen from inside the cover with the switch and jack end on the left. Boards drawn as simple blocks.</figcaption></figure>
         <p>The holders are sized for a 51.8 × 28.2 mm ESP32, a 22 × 17 mm MP1584 and a 16 × 13.5 mm shifter. Measure yours before printing. If one differs, change its size at the top of the script and run it again.</p>
-        <p>Melt an <b>M3 insert</b> into each of the 4 new bosses on the cover's floor. Lay the cover inside-up with the switch and jack end on your left: the tray goes on the bosses with the ESP32 on the right and its USB port pointing up, towards the keyhole. Fix it with 4 <b>M3×8</b>. Wires can run underneath the tray, which sits 7.5 mm above the floor. Leave enough slack for the cover to lie open beside the case.</p>
-        <div class="kit"><span>4× M3 insert</span><span>4× M3×8</span></div></div></li>
+        <p>Melt an <b>M3 insert</b> into each of the 4 new bosses on the cover's floor. Lay the cover inside-up with the switch and jack end on your left: the tray goes on the bosses with the ESP32 on the right and its USB port pointing up, towards the keyhole. Fix it with 4 <b>M3×8</b> into those inserts. The tray needs no inserts: the screws pass through its holes. Wires can run underneath the tray, which sits 7.5 mm above the floor. Leave enough slack for the cover to lie open beside the case.</p>
+        <div class="kit"><span>4× M3 insert</span><span>4× M3×8</span><span class="into ins">into inserts</span></div></div></li>
       <li><input type="checkbox" id="es3"><label for="es3">Flash the master: <code>pio run -e master -t upload</code>, then <code>pio run -e master -t uploadfs</code>.</label></li>
             <li><input type="checkbox" id="es5"><label for="es5">Serial monitor at 115200: it prints <code>[bus] scan: 1/9 units answered: 0x10=ok …</code> with just unit 0 connected, and the rest <code>MISSING</code>. Type text; it should appear on the flap.</label></li>
       <li><input type="checkbox" id="es4"><label for="es4">Connect it to Wi-Fi: follow <a href="https://github.com/Hynicon/split-flap#first-time-setup"><b>First-time setup</b></a> in the README. If you built anything other than 9 units, set <b>units = <span class="N">9</span></b> on its Settings page, because the firmware's default is 9.</label></li>
@@ -723,12 +731,36 @@ Signals
   // Photos open full size in a dialog; a click, Esc or Enter closes it.
   const zoom = document.getElementById('zoom'), zoomImg = zoom.appendChild(document.createElement('img'));
   const openZoom = (img) => { zoomImg.src = img.currentSrc || img.src; zoomImg.alt = img.alt; zoom.showModal(); };
-  document.querySelectorAll('.photo img').forEach((img) => {
+  const zoomable = (img) => {
     img.tabIndex = 0; img.setAttribute('role', 'button'); img.setAttribute('aria-label', `Enlarge: ${img.alt}`);
     img.addEventListener('click', () => openZoom(img));
     img.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openZoom(img); } });
-  });
+  };
+  document.querySelectorAll('.photo img').forEach(zoomable);
   zoom.addEventListener('click', () => zoom.close());
+
+  // Build photos: photos/photos.json (written by tools/add_photos.py) maps a step's id, or a
+  // data-photos slot such as "hero", to its photos. They go at the end of that step. A step's
+  // figures marked data-old (upstream photos of older boards) give way once its own photo loads.
+  fetch('photos/photos.json').then((r) => r.ok ? r.json() : {}).then((all) => {
+    for (const [key, list] of Object.entries(all)) {
+      const slot = document.querySelector(`[data-photos="${key}"]`) || document.getElementById(key)?.closest('li');
+      if (!slot || !Array.isArray(list)) continue;
+      const box = document.createElement('div');
+      box.className = 'shots';
+      for (const p of list) {
+        const fig = document.createElement('figure'), img = document.createElement('img');
+        fig.className = 'photo';
+        img.src = `photos/${p.file}`; img.loading = 'lazy'; img.alt = p.alt || p.caption || 'Photo of this step';
+        img.onerror = () => fig.remove();
+        img.onload = () => slot.querySelectorAll('figure[data-old]').forEach((f) => f.remove());
+        fig.append(img);
+        if (p.caption) { const c = document.createElement('figcaption'); c.textContent = p.caption; fig.append(c); }
+        zoomable(img); box.append(fig);
+      }
+      slot.append(box);
+    }
+  }).catch(() => {});
 
   document.querySelectorAll('.sizes button').forEach(b => b.addEventListener('click', () => { state.n = +b.dataset.n; save(); render(); }));
   document.querySelectorAll('.steps input[type=checkbox]').forEach(b => b.addEventListener('change', () => {

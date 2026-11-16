@@ -14,7 +14,7 @@
   };
   const STAFF_KEYS = ["mode", "single", "text", "text_align", "words", "random_seconds", "presets", "mix",
     "countdown_label", "countdown_at", "countdown_done"];
-  const STORE = "splitflap-demo-v1";
+  const STORE = "splitflap-demo-v2";
 
   const fresh = () => ({
     config: {
@@ -23,7 +23,7 @@
         instagram: { enabled: true, source: "manual", manual_count: 5231 },
         facebook: { enabled: true, source: "manual", manual_count: 912 },
       },
-      poll_minutes: 15, cycle_seconds: 20, units: 9, label_width: 2, label_logos: true, speed: 10,
+      poll_minutes: 15, cycle_seconds: 20, units: 10, label_width: 2, label_logos: true, speed: 10,
       mode: "mix", single: "instagram", text: "OPEN TIL 9", text_align: "center",
       quiet_start: "00:00", quiet_end: "00:00", timezone: "UTC0", celebrate: false, milestone_step: 1000,
       random_seconds: 20,
